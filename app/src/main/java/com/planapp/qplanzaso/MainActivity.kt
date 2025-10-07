@@ -12,12 +12,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.firestore.FirebaseFirestore
 import com.planapp.qplanzaso.ui.theme.QPlanzasoTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MyApp", "Firebase inicializado correctamente✅")
+
+        val db = FirebaseFirestore.getInstance()
+        val testUser = hashMapOf("nombre" to "Kevin", "rol" to "Tester")
+
+        db.collection("usuarios").add(testUser)
+            .addOnSuccessListener { Log.d("Firestore", "✅ Documento agregado con ID: ${it.id}") }
+            .addOnFailureListener { e -> Log.e("Firestore", "❌ Error al agregar documento", e) }
+
         enableEdgeToEdge()
         setContent {
             QPlanzasoTheme {

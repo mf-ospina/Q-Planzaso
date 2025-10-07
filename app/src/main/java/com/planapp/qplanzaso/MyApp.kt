@@ -18,9 +18,11 @@ class MyApp : Application() {
             val firestore = FirebaseFirestore.getInstance()
             firestore.useEmulator("10.0.2.2", 8080)
 
+            // 🔑 Configurar Auth
             val auth = FirebaseAuth.getInstance()
             auth.useEmulator("10.0.2.2", 9099)
 
+            // 📦 Configurar Storage
             val storage = Firebase.storage
             storage.useEmulator("10.0.2.2", 9199)
         }
