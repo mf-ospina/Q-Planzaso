@@ -19,36 +19,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         Log.d("MyApp", "Firebase inicializado correctamente✅")
 
-        //VERIFICACIÓN DE CONEXIÓN A FIREBASE
         val db = FirebaseFirestore.getInstance()
+        val testUser = hashMapOf("nombre" to "Kevin", "rol" to "Tester")
 
-        // Escribir un documento de prueba
-        val testData = hashMapOf(
-            "nombre" to "Kevin",
-            "mensaje" to "Conexión con Firestore exitosa 🚀"
-        )
-
-        db.collection("pruebas")
-            .add(testData)
-            .addOnSuccessListener { documentReference ->
-                Log.d("FirestoreTest", "Documento agregado con ID: ${documentReference.id}")
-            }
-            .addOnFailureListener { e ->
-                Log.w("FirestoreTest", "Error al agregar documento", e)
-            }
-
-        // Leer todos los documentos de la colección "pruebas"
-        db.collection("pruebas")
-            .get()
-            .addOnSuccessListener { result ->
-                for (document in result) {
-                    Log.d("FirestoreTest", "${document.id} => ${document.data}")
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.w("FirestoreTest", "Error al leer documentos", e)
-            }
-
+        db.collection("usuarios").add(testUser)
+            .addOnSuccessListener { Log.d("Firestore", "✅ Documento agregado con ID: ${it.id}") }
+            .addOnFailureListener { e -> Log.e("Firestore", "❌ Error al agregar documento", e) }
 
         enableEdgeToEdge()
         setContent {
