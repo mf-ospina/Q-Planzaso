@@ -31,6 +31,8 @@ import com.planapp.qplanzaso.R
 @Composable
 fun LoginScreen(navController: NavController) {
     val context = LocalContext.current
+    //contexto para llamar metodos de autenticacion
+
     val auth = FirebaseAuth.getInstance()
 
     var username by remember { mutableStateOf("") }
@@ -147,9 +149,11 @@ fun LoginScreen(navController: NavController) {
 
             // === Botón Acceder ===
             Button(
+
                 onClick = {
                     if (username.isNotEmpty() && password.isNotEmpty()) {
                         loading = true
+
                         auth.signInWithEmailAndPassword(username, password)
                             .addOnCompleteListener { task ->
                                 loading = false

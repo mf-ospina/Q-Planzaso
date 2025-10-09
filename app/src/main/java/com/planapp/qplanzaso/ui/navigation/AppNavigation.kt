@@ -11,6 +11,9 @@ import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.LoginScreen
 import com.planapp.qplanzaso.ui.screens.auth.AccountChoiceScreen
 import com.planapp.qplanzaso.ui.screens.auth.ForgotPasswordScreen
+import com.planapp.qplanzaso.ui.screens.auth.Organizador
+import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
+
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     NavHost(
@@ -24,5 +27,9 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
         composable("account_choice") { AccountChoiceScreen(navController) }
         composable("login") { LoginScreen(navController) }
         composable("forgot") { ForgotPasswordScreen(navController) }
+        composable("organizador") { Organizador(navController) }
+
+        //composable("tipoOrganizadorScreen") { TipoOrganizadorScreen(navController) }
     }
 }
+

@@ -58,7 +58,7 @@ fun AccountChoiceScreen(navController: NavController) {
             }
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
-                onClick = { /* navController.navigate("register") */ },
+                onClick = {  navController.navigate("organizador")  },
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
