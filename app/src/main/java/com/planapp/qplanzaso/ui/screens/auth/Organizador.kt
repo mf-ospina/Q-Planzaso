@@ -68,7 +68,7 @@ fun Organizador(navController: NavController) {
             // === Botón "Sí" ===
             Button(
                 onClick = {
-                    navController.navigate("organizadorEvent")
+                    navController.navigate("TipoOrganizadorScreen")
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFDE4B5),
@@ -87,7 +87,7 @@ fun Organizador(navController: NavController) {
             // === Botón "No" ===
             Button(
                 onClick = {
-                    navController.navigate("user_home") {
+                    navController.navigate("RegisterScreen") {
                         popUpTo("login") { inclusive = true }
                     }
                 },

@@ -64,7 +64,7 @@ fun TipoOrganizadorScreen(
                 Button(
                     onClick = {
                         // VERIFICA ESTA LÍNEA EXACTAMENTE
-                        navController.navigate("ruta_empresarial")
+                        navController.navigate("MoreInfoScreen")
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFDE4B5),
@@ -82,7 +82,7 @@ fun TipoOrganizadorScreen(
                 Button(
                     onClick = {
                         // Y VERIFICA ESTA OTRA LÍNEA EXACTAMENTE
-                        navController.navigate("ruta_particular")
+                        navController.navigate("MoreInfoScreen")
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFDE4B5),

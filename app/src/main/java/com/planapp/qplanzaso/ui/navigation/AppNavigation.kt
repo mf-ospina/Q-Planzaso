@@ -11,8 +11,13 @@ import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.LoginScreen
 import com.planapp.qplanzaso.ui.screens.auth.AccountChoiceScreen
 import com.planapp.qplanzaso.ui.screens.auth.ForgotPasswordScreen
+import com.planapp.qplanzaso.ui.screens.auth.MoreInfoScreen
 import com.planapp.qplanzaso.ui.screens.auth.Organizador
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.planapp.qplanzaso.ui.screens.auth.OrganizerViewModel
+import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
+
 
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
@@ -28,8 +33,14 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
         composable("login") { LoginScreen(navController) }
         composable("forgot") { ForgotPasswordScreen(navController) }
         composable("organizador") { Organizador(navController) }
+        composable("TipoOrganizadorScreen") { TipoOrganizadorScreen(navController) }
+        composable("MoreInfoScreen") {
+            val organizerViewModel: OrganizerViewModel = viewModel()
+            MoreInfoScreen(navController, organizerViewModel)
+        }
 
-        //composable("tipoOrganizadorScreen") { TipoOrganizadorScreen(navController) }
+        composable("RegisterScreen") { RegisterScreen(navController) }
+
     }
 }
 

@@ -54,19 +54,19 @@ fun LocationPermissionScreen(
                     Log.d("Location", "Ubicación null (a veces ocurre en emulador)")
                 }
                 // 👉 Si acepta el permiso, sigue el flujo normal
-                navController.navigate("accountChoice") {
+                navController.navigate("account_choice") {
                     popUpTo("location") { inclusive = true }
                 }
             }.addOnFailureListener {
                 Log.w("Location", "Error al obtener ubicación", it)
-                navController.navigate("accountChoice") {
+                navController.navigate("account_choice") {
                     popUpTo("location") { inclusive = true }
                 }
             }
         } else {
             Log.d("Location", "Permiso denegado")
             // 👉 Si niega el permiso, igual continúa el flujo
-            navController.navigate("accountChoice") {
+            navController.navigate("account_choice") {
                 popUpTo("location") { inclusive = true }
             }
         }
