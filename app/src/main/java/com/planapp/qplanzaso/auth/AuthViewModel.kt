@@ -15,7 +15,7 @@ class AuthViewModel(
     private val usuarioRepository: UsuarioRepository = UsuarioRepository()
 ) : ViewModel() {
 
-    private val _authState = MutableStateFlow<AuthResult<Any>>(AuthResult.Loading)
+    private val _authState = MutableStateFlow<AuthResult<Any>>(AuthResult.Idle)
     val authState: StateFlow<AuthResult<Any>> = _authState
 
     // ---------------------------

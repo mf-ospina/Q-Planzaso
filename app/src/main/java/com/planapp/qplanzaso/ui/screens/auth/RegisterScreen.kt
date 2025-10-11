@@ -1,10 +1,9 @@
 package com.planapp.qplanzaso.ui.screens.auth
 
-import androidx.compose.foundation.Image
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -12,10 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,12 +22,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.planapp.qplanzaso.R // Asegúrate de que este import sea correcto
+import com.planapp.qplanzaso.auth.AuthResult
+import com.planapp.qplanzaso.auth.AuthViewModel
 
 @Composable
-fun RegisterScreen(navController: NavController) {
+fun RegisterScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
+    val context = LocalContext.current
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var usuario by remember { mutableStateOf("") }
@@ -40,25 +40,35 @@ fun RegisterScreen(navController: NavController) {
     var acceptsDataPolicy by remember { mutableStateOf(false) }
     var acceptsTerms by remember { mutableStateOf(false) }
 
+    val authState by viewModel.authState.collectAsState()
+
+    // 🔹 Manejo del estado de autenticación
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthResult.Success -> {
+                Toast.makeText(context, "Registro exitoso 🎉", Toast.LENGTH_SHORT).show()
+
+                navController.navigate("login") {
+                    popUpTo("RegisterScreen") { inclusive = true }
+                }
+            }
+            is AuthResult.Error -> {
+                Toast.makeText(context, (authState as AuthResult.Error).message, Toast.LENGTH_LONG).show()
+            }
+            else -> Unit
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
             .padding(32.dp)
-            .verticalScroll(rememberScrollState()), // Permite scroll si el contenido no cabe
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Avatar
-        Box(
-            modifier = Modifier
-                .size(160.dp)
-                .background(Color.White, shape = RoundedCornerShape(8.dp))
-        )
-
-
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Título
         Text(
             text = "Queremos saber más de ti",
             fontSize = 28.sp,
@@ -69,7 +79,6 @@ fun RegisterScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Campos del formulario
         StyledTextField(label = "Nombre", value = nombre, onValueChange = { nombre = it })
         Spacer(modifier = Modifier.height(16.dp))
         StyledTextField(label = "Apellido", value = apellido, onValueChange = { apellido = it })
@@ -84,7 +93,6 @@ fun RegisterScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Opciones de aceptación
         AcceptanceRow(
             text = "Acepto el uso de tratamiento de datos.",
             checked = acceptsDataPolicy,
@@ -96,16 +104,24 @@ fun RegisterScreen(navController: NavController) {
             onCheckedChange = { acceptsTerms = it }
         )
 
-        Spacer(modifier = Modifier.weight(1f)) // Empuja el botón al fondo
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Botón de continuar
+        // 🔸 Botón de registro
         Button(
             onClick = {
-                // TODO: Aquí va la lógica para registrar al usuario (llamar al ViewModel)
+                if (clave != repetirClave) {
+                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                } else {
+                    viewModel.register(
+                        email = email.trim(),
+                        password = clave.trim(),
+                        nombre = "$nombre $apellido".trim()
+                    )
+                }
             },
-            enabled = acceptsDataPolicy && acceptsTerms, // Se activa solo si acepta las políticas
+            enabled = acceptsDataPolicy && acceptsTerms && authState !is AuthResult.Loading,
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF9A825), // Naranja
+                containerColor = Color(0xFFF9A825),
                 contentColor = Color.White,
                 disabledContainerColor = Color.Gray
             ),
@@ -114,12 +130,18 @@ fun RegisterScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            Text("Continuar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            if (authState is AuthResult.Loading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text("Continuar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
 
-// Componente reutilizable para los campos de texto con el estilo de la imagen
 @Composable
 private fun StyledTextField(
     label: String,
@@ -139,16 +161,18 @@ private fun StyledTextField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            focusedIndicatorColor = Color(0xFFF9A825), // Línea naranja cuando está seleccionado
+            focusedIndicatorColor = Color(0xFFF9A825),
             unfocusedIndicatorColor = Color.LightGray,
             focusedLabelColor = Color.DarkGray,
             unfocusedLabelColor = Color.Gray
         ),
-        keyboardOptions = KeyboardOptions(keyboardType = if (isPassword) KeyboardType.Password else keyboardType, imeAction = imeAction)
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (isPassword) KeyboardType.Password else keyboardType,
+            imeAction = imeAction
+        )
     )
 }
 
-// Componente reutilizable para las filas con el interruptor
 @Composable
 private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
@@ -160,7 +184,7 @@ private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Bool
             onCheckedChange = onCheckedChange,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFFF9A825) // Naranja cuando está activo
+                checkedTrackColor = Color(0xFFF9A825)
             )
         )
         Spacer(modifier = Modifier.width(8.dp))
@@ -168,7 +192,6 @@ private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Bool
     }
 }
 
-// Previsualización para ver el diseño en Android Studio
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun RegisterScreenPreview() {
