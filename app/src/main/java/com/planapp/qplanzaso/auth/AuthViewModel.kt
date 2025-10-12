@@ -3,72 +3,64 @@ package com.planapp.qplanzaso.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseUser
-import com.planapp.qplanzaso.data.repository.UsuarioRepository
-import com.planapp.qplanzaso.model.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import android.util.Log
 
 class AuthViewModel(
-    private val authRepository: AuthRepository = AuthRepository(),
-    private val usuarioRepository: UsuarioRepository = UsuarioRepository()
+    private val repository: AuthRepository = AuthRepository()
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthResult<Any>>(AuthResult.Idle)
     val authState: StateFlow<AuthResult<Any>> = _authState
 
-    // ---------------------------
-    // 1️⃣ Registrar nuevo usuario
-    // ---------------------------
-    fun register(email: String, password: String, nombre: String, rol: String = "asistente") {
+    fun register(email: String, password: String, nombre: String, tipoUsuario: String) {
         viewModelScope.launch {
             _authState.value = AuthResult.Loading
 
-            val result = authRepository.registerUser(email, password, nombre, rol)
+            val result = repository.registerUser(
+                email = email,
+                password = password,
+                nombre = nombre,
+                tipoUsuario = tipoUsuario
+            )
+
             _authState.value = result
 
-            if (result is AuthResult.Success && result.data != null) {
-                val usuario = result.data
-                try {
-                    usuarioRepository.crearUsuario(usuario)
-                    Log.d("AuthViewModel", "✅ Usuario guardado en Firestore correctamente.")
-                } catch (e: Exception) {
-                    Log.e("AuthViewModel", "❌ Error al guardar usuario en Firestore", e)
-                }
-            }
+            // 🔹 Esperamos un poco y reiniciamos el estado para que el botón se habilite de nuevo
+            kotlinx.coroutines.delay(100)
+            _authState.value = AuthResult.Idle
         }
     }
 
-    // ---------------------------
-    // 2️⃣ Iniciar sesión
-    // ---------------------------
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _authState.value = AuthResult.Loading
-            _authState.value = authRepository.loginUser(email, password)
+
+            val result = repository.loginUser(email, password)
+            _authState.value = result
+
+            kotlinx.coroutines.delay(100)
+            _authState.value = AuthResult.Idle
         }
     }
 
-    // ---------------------------
-    // 3️⃣ Cerrar sesión
-    // ---------------------------
     fun logout() {
-        authRepository.logoutUser()
-        _authState.value = AuthResult.Success(null)
+        repository.logoutUser()
+        _authState.value = AuthResult.Idle
     }
 
-    // ---------------------------
-    // 4️⃣ Restablecer contraseña
-    // ---------------------------
     fun resetPassword(email: String) {
         viewModelScope.launch {
-            _authState.value = authRepository.resetPassword(email)
+            _authState.value = AuthResult.Loading
+
+            val result = repository.resetPassword(email)
+            _authState.value = result
+
+            kotlinx.coroutines.delay(100)
+            _authState.value = AuthResult.Idle
         }
     }
 
-    // ---------------------------
-    // 5️⃣ Obtener usuario actual
-    // ---------------------------
-    fun getCurrentUser(): FirebaseUser? = authRepository.currentUser()
+    fun getCurrentUser(): FirebaseUser? = repository.currentUser()
 }

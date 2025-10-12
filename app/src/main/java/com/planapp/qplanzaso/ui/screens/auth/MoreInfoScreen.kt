@@ -24,49 +24,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
 
-// ✅ ViewModel simple que guarda los datos del organizador
-class OrganizerViewModel {
-    private val db = FirebaseFirestore.getInstance()
-
-    fun saveProfile(
-        userId: String,
-        empresa: String,
-        nit: String,
-        numero: String,
-        direccion: String,
-        email: String,
-        password: String,
-        onResult: (Boolean, String?) -> Unit
-    ) {
-        val organizerData = mapOf(
-            "uid" to userId,
-            "empresa" to empresa,
-            "nit" to nit,
-            "numero" to numero,
-            "direccion" to direccion,
-            "email" to email,
-            "password" to password // ⚠️ Solo para pruebas. No guardes contraseñas reales.
-        )
-
-        db.collection("organizers").document(userId)
-            .set(organizerData)
-            .addOnSuccessListener { onResult(true, null) }
-            .addOnFailureListener { e -> onResult(false, e.message) }
-    }
-}
-
 @Composable
-fun MoreInfoScreen(navController: NavController) {
+fun MoreInfoScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
     val context = LocalContext.current
-    val auth = FirebaseAuth.getInstance()
-
-    // ✅ Se crea el ViewModel localmente (opción 1)
-    val organizerViewModel = remember { OrganizerViewModel() }
-    val viewModel: AuthViewModel = viewModel() // Por si necesitas acceder al AuthViewModel
 
     var empresa by remember { mutableStateOf("") }
     var nit by remember { mutableStateOf("") }
@@ -74,11 +40,29 @@ fun MoreInfoScreen(navController: NavController) {
     var direccion by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
     var showPassword by remember { mutableStateOf(false) }
+
     var acceptsDataPolicy by remember { mutableStateOf(false) }
     var acceptsTerms by remember { mutableStateOf(false) }
-    var loading by remember { mutableStateOf(false) }
+
+    val authState by viewModel.authState.collectAsState()
+
+    LaunchedEffect(authState) {
+        when (authState) {
+            is AuthResult.Success -> {
+                Toast.makeText(context, "Empresa registrada correctamente ✅", Toast.LENGTH_SHORT).show()
+                navController.navigate("login") {
+                    popUpTo("MoreInfoScreen") { inclusive = true }
+                }
+            }
+
+            is AuthResult.Error -> {
+                Toast.makeText(context, (authState as AuthResult.Error).message, Toast.LENGTH_LONG).show()
+            }
+
+            else -> Unit
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -101,14 +85,13 @@ fun MoreInfoScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(12.dp))
         InfoTextField(label = "NIT", value = nit, onValueChange = { nit = it }, keyboardType = KeyboardType.Number)
         Spacer(modifier = Modifier.height(12.dp))
-        InfoTextField(label = "Número", value = numero, onValueChange = { numero = it }, keyboardType = KeyboardType.Phone)
+        InfoTextField(label = "Número de contacto", value = numero, onValueChange = { numero = it }, keyboardType = KeyboardType.Phone)
         Spacer(modifier = Modifier.height(12.dp))
         InfoTextField(label = "Dirección", value = direccion, onValueChange = { direccion = it })
         Spacer(modifier = Modifier.height(12.dp))
-        InfoTextField(label = "Email", value = email, onValueChange = { email = it }, keyboardType = KeyboardType.Email)
-        Spacer(modifier = Modifier.height(12.dp))
+        InfoTextField(label = "Correo electrónico", value = email, onValueChange = { email = it }, keyboardType = KeyboardType.Email)
 
-        // 🔹 Campo de contraseña con icono para mostrar/ocultar
+        Spacer(modifier = Modifier.height(12.dp))
         TextField(
             value = password,
             onValueChange = { password = it },
@@ -143,7 +126,7 @@ fun MoreInfoScreen(navController: NavController) {
             onCheckedChange = { acceptsTerms = it }
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = {
@@ -157,40 +140,14 @@ fun MoreInfoScreen(navController: NavController) {
                     return@Button
                 }
 
-                loading = true
-
-                // 🔹 Crear usuario en Firebase Authentication
-                auth.createUserWithEmailAndPassword(email.trim(), password.trim())
-                    .addOnSuccessListener { result ->
-                        val userId = result.user?.uid ?: return@addOnSuccessListener
-
-                        // 🔹 Guardar datos adicionales en Firestore
-                        organizerViewModel.saveProfile(
-                            userId = userId,
-                            empresa = empresa,
-                            nit = nit,
-                            numero = numero,
-                            direccion = direccion,
-                            email = email,
-                            password = password
-                        ) { success, error ->
-                            loading = false
-                            if (success) {
-                                Toast.makeText(context, "Perfil guardado correctamente", Toast.LENGTH_SHORT).show()
-                                navController.navigate("login") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            } else {
-                                Toast.makeText(context, "Error: $error", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        loading = false
-                        Toast.makeText(context, "Error al registrar: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
+                viewModel.register(
+                    email = email.trim(),
+                    password = password.trim(),
+                    nombre = empresa.trim(),
+                    tipoUsuario = "empresarial"
+                )
             },
-            enabled = !loading,
+            enabled = authState !is AuthResult.Loading,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFF9A825),
                 contentColor = Color.White,
@@ -201,12 +158,8 @@ fun MoreInfoScreen(navController: NavController) {
                 .fillMaxWidth()
                 .height(50.dp)
         ) {
-            if (loading) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    strokeWidth = 2.dp,
-                    modifier = Modifier.size(22.dp)
-                )
+            if (authState is AuthResult.Loading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
             } else {
                 Text("Continuar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }

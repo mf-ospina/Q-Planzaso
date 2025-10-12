@@ -19,17 +19,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
 
 @Composable
-fun RegisterScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
+fun RegisterScreen(
+    navController: NavController,
+    viewModel: AuthViewModel = viewModel()
+) {
     val context = LocalContext.current
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
@@ -42,19 +43,20 @@ fun RegisterScreen(navController: NavController, viewModel: AuthViewModel = view
 
     val authState by viewModel.authState.collectAsState()
 
-    // 🔹 Manejo del estado de autenticación
+    // 🔹 Control de resultado de autenticación
     LaunchedEffect(authState) {
         when (authState) {
             is AuthResult.Success -> {
                 Toast.makeText(context, "Registro exitoso 🎉", Toast.LENGTH_SHORT).show()
-
                 navController.navigate("login") {
                     popUpTo("RegisterScreen") { inclusive = true }
                 }
             }
+
             is AuthResult.Error -> {
                 Toast.makeText(context, (authState as AuthResult.Error).message, Toast.LENGTH_LONG).show()
             }
+
             else -> Unit
         }
     }
@@ -106,16 +108,18 @@ fun RegisterScreen(navController: NavController, viewModel: AuthViewModel = view
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 🔸 Botón de registro
         Button(
             onClick = {
                 if (clave != repetirClave) {
                     Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
+                } else if (nombre.isBlank() || apellido.isBlank() || email.isBlank()) {
+                    Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
                 } else {
                     viewModel.register(
                         email = email.trim(),
                         password = clave.trim(),
-                        nombre = "$nombre $apellido".trim()
+                        nombre = "$nombre $apellido".trim(),
+                        tipoUsuario = "particular"
                     )
                 }
             },
@@ -190,10 +194,4 @@ private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Bool
         Spacer(modifier = Modifier.width(8.dp))
         Text(text, color = Color.Gray, fontSize = 14.sp)
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun RegisterScreenPreview() {
-    RegisterScreen(rememberNavController())
 }

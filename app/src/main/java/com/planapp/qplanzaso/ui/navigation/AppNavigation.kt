@@ -15,7 +15,6 @@ import com.planapp.qplanzaso.ui.screens.auth.MoreInfoScreen
 import com.planapp.qplanzaso.ui.screens.auth.Organizador
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.planapp.qplanzaso.ui.screens.HomeScreen
-import com.planapp.qplanzaso.ui.screens.auth.OrganizerViewModel
 import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
 
@@ -32,17 +31,11 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
         composable("home") { HomeScreen(navController) }
         composable("account_choice") { AccountChoiceScreen(navController) }
         composable("login") { LoginScreen(navController) }
-        composable("forgot") {
-            ForgotPasswordScreen(navController)
-        }
+        composable("forgot") { ForgotPasswordScreen(navController) }
 
         composable("organizador") { Organizador(navController) }
         composable("TipoOrganizadorScreen") { TipoOrganizadorScreen(navController) }
-        composable("MoreInfoScreen") {
-            MoreInfoScreen(navController)
-        }
-
-
+        composable("MoreInfoScreen") { MoreInfoScreen(navController)  }
 
         composable("RegisterScreen") { RegisterScreen(navController) }
 
