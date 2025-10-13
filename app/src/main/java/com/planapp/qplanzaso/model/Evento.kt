@@ -3,22 +3,35 @@ package com.planapp.qplanzaso.model
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 
+/**
+ * Representa un evento dentro de la aplicación.
+ * Compatible con las funcionalidades de búsqueda, filtros y gestión del organizador.
+ */
 data class Evento(
     var id: String? = null,
-    val nombre: String = "",
-    val descripcion: String = "",
-    val categoria: String = "",
-    val vibra: String = "", // Ej: "chill", "cultural", "romántico"
-    val fechaInicio: Timestamp? = null,
-    val fechaFin: Timestamp? = null,
-    val ubicacion: GeoPoint? = null,
-    val direccion: String = "",
-    val precio: Double = 0.0,
-    val organizadorId: String = "",
-    val imagenPortada: String = "",
-    val estado: String = "proximo", // "proximo", "pasado", "cancelado"
-    val verificado: Boolean = false,
-    val calificacionPromedio: Double = 0.0,
-    val asistentesCount: Int = 0,
-    val favoritosCount: Int = 0
+    var nombre: String = "",
+    var descripcion: String = "",
+    var categoria: String = "",
+    var categoriasIds: List<String> = emptyList(),
+    var vibras: List<String> = emptyList(),
+    var precio: Double = 0.0,
+    var fechaInicio: Timestamp? = null,
+    var fechaFin: Timestamp? = null,
+    var organizadorId: String = "",
+    var verificado: Boolean = false,
+    var estado: String = "proximo",
+    var calificacionPromedio: Double = 0.0,
+    var calificacionesCount: Int = 0,
+    var asistentesCount: Int = 0,
+    var favoritosCount: Int = 0,
+
+    // 🔹 ubicación:
+    var ubicacion: GeoPoint? = null, // coordenadas (lat, lon)
+    var direccion: String? = null, // texto legible como parque simon bolivar
+    var ciudad: String? = null,
+    var pais: String? = null,
+
+    //Inscripcion
+    val inscritosIds: List<String> = emptyList() // lista de usuarios inscritos
+
 )

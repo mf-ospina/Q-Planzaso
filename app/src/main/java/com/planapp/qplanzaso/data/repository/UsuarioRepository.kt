@@ -10,8 +10,10 @@ import kotlinx.coroutines.tasks.await
 
 class UsuarioRepository {
 
+    //Logica Firebase
     private val db = FirebaseFirestore.getInstance()
 
+    //Logica de usuarios para el login
     suspend fun crearUsuario(usuario: Usuario) {
         db.collection("usuarios").document(usuario.uid)
             .set(usuario, SetOptions.merge()).await()
@@ -48,4 +50,43 @@ class UsuarioRepository {
         db.collection("usuarios").document(uid)
             .collection("recomendaciones").add(recomendacion).await()
     }
+
+    // 🔹 Obtener lista de eventos favoritos
+    suspend fun obtenerEventosFavoritos(uid: String): List<Evento> {
+        val snapshot = db.collection("usuarios").document(uid)
+            .collection("eventosFavoritos").get().await()
+        return snapshot.toObjects(Evento::class.java)
+    }
+
+    // 🔹 Eliminar evento de favoritos
+    suspend fun eliminarEventoFavorito(uid: String, eventoId: String) {
+        db.collection("usuarios").document(uid)
+            .collection("eventosFavoritos").document(eventoId).delete().await()
+    }
+
+    // 🔹 Obtener eventos inscritos
+    suspend fun obtenerEventosInscritos(uid: String): List<Evento> {
+        val snapshot = db.collection("usuarios").document(uid)
+            .collection("eventosInscritos").get().await()
+        return snapshot.toObjects(Evento::class.java)
+    }
+
+    // 🔹 Eliminar inscripción a evento
+    suspend fun eliminarEventoInscrito(uid: String, eventoId: String) {
+        db.collection("usuarios").document(uid)
+            .collection("eventosInscritos").document(eventoId).delete().await()
+    }
+
+    // 🔹 Incrementar contador de eventos publicados por organizador
+    suspend fun incrementarEventosPublicados(uid: String) {
+        db.collection("usuarios").document(uid)
+            .update("eventosPublicados", com.google.firebase.firestore.FieldValue.increment(1)).await()
+    }
+
+    // 🔹 Disminuir contador al eliminar evento
+    suspend fun decrementarEventosPublicados(uid: String) {
+        db.collection("usuarios").document(uid)
+            .update("eventosPublicados", com.google.firebase.firestore.FieldValue.increment(-1)).await()
+    }
+
 }
