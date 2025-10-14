@@ -1,6 +1,7 @@
 package com.planapp.qplanzaso.ui.screens.auth
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,6 +14,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
 
@@ -32,6 +36,7 @@ fun RegisterScreen(
     viewModel: AuthViewModel = viewModel()
 ) {
     val context = LocalContext.current
+
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var usuario by remember { mutableStateOf("") }
@@ -41,110 +46,186 @@ fun RegisterScreen(
     var acceptsDataPolicy by remember { mutableStateOf(false) }
     var acceptsTerms by remember { mutableStateOf(false) }
 
+    // 👇 Nueva variable para controlar el diálogo
+    var showPolicyDialog by remember { mutableStateOf(false) }
+
     val authState by viewModel.authState.collectAsState()
 
-    // 🔹 Control de resultado de autenticación
+    // Control de resultado de autenticación
     LaunchedEffect(authState) {
         when (authState) {
             is AuthResult.Success -> {
-                Toast.makeText(context, "Registro exitoso 🎉", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.register_success),
+                    Toast.LENGTH_SHORT
+                ).show()
                 navController.navigate("login") {
                     popUpTo("RegisterScreen") { inclusive = true }
                 }
             }
 
             is AuthResult.Error -> {
-                Toast.makeText(context, (authState as AuthResult.Error).message, Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    context,
+                    (authState as AuthResult.Error).message,
+                    Toast.LENGTH_LONG
+                ).show()
             }
 
             else -> Unit
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(32.dp)
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 32.dp, vertical = 16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Queremos saber más de ti",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.DarkGray,
-            textAlign = TextAlign.Center
-        )
+            Text(
+                text = context.getString(R.string.register_title),
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.DarkGray,
+                textAlign = TextAlign.Center
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        StyledTextField(label = "Nombre", value = nombre, onValueChange = { nombre = it })
-        Spacer(modifier = Modifier.height(16.dp))
-        StyledTextField(label = "Apellido", value = apellido, onValueChange = { apellido = it })
-        Spacer(modifier = Modifier.height(16.dp))
-        StyledTextField(label = "Usuario", value = usuario, onValueChange = { usuario = it })
-        Spacer(modifier = Modifier.height(16.dp))
-        StyledTextField(label = "Clave", value = clave, onValueChange = { clave = it }, isPassword = true)
-        Spacer(modifier = Modifier.height(16.dp))
-        StyledTextField(label = "Repetir contraseña", value = repetirClave, onValueChange = { repetirClave = it }, isPassword = true)
-        Spacer(modifier = Modifier.height(16.dp))
-        StyledTextField(label = "Email", value = email, onValueChange = { email = it }, keyboardType = KeyboardType.Email, imeAction = ImeAction.Done)
+            Image(
+                painter = painterResource(id = R.drawable.img2),
+                contentDescription = stringResource(R.string.tipo_organizador_image_desc),
+                modifier = Modifier.size(120.dp)
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        AcceptanceRow(
-            text = "Acepto el uso de tratamiento de datos.",
-            checked = acceptsDataPolicy,
-            onCheckedChange = { acceptsDataPolicy = it }
-        )
-        AcceptanceRow(
-            text = "Acepto políticas de uso.",
-            checked = acceptsTerms,
-            onCheckedChange = { acceptsTerms = it }
-        )
+            StyledTextField(label = context.getString(R.string.label_nombre), value = nombre, onValueChange = { nombre = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            StyledTextField(label = context.getString(R.string.label_apellido), value = apellido, onValueChange = { apellido = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            StyledTextField(label = context.getString(R.string.label_usuario), value = usuario, onValueChange = { usuario = it })
+            Spacer(modifier = Modifier.height(16.dp))
+            StyledTextField(label = context.getString(R.string.label_clave), value = clave, onValueChange = { clave = it }, isPassword = true)
+            Spacer(modifier = Modifier.height(16.dp))
+            StyledTextField(label = context.getString(R.string.label_repetir_clave), value = repetirClave, onValueChange = { repetirClave = it }, isPassword = true)
+            Spacer(modifier = Modifier.height(16.dp))
+            StyledTextField(
+                label = context.getString(R.string.label_email),
+                value = email,
+                onValueChange = { email = it },
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Done
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                if (clave != repetirClave) {
-                    Toast.makeText(context, "Las contraseñas no coinciden", Toast.LENGTH_SHORT).show()
-                } else if (nombre.isBlank() || apellido.isBlank() || email.isBlank()) {
-                    Toast.makeText(context, "Por favor completa todos los campos", Toast.LENGTH_SHORT).show()
+            // ✅ Filas de aceptación con botón de ver políticas
+            AcceptanceRow(
+                text = context.getString(R.string.accept_data_policy),
+                checked = acceptsDataPolicy,
+                onCheckedChange = { acceptsDataPolicy = it }
+            )
+            AcceptanceRow(
+                text = context.getString(R.string.accept_terms),
+                checked = acceptsTerms,
+                onCheckedChange = { acceptsTerms = it },
+                onSeePolicyClick = { showPolicyDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = {
+                    if (clave != repetirClave) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.error_passwords_mismatch),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else if (nombre.isBlank() || apellido.isBlank() || email.isBlank()) {
+                        Toast.makeText(
+                            context,
+                            context.getString(R.string.error_empty_fields),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        viewModel.register(
+                            email = email.trim(),
+                            password = clave.trim(),
+                            nombre = "$nombre $apellido".trim(),
+                            tipoUsuario = "particular"
+                        )
+                    }
+                },
+                enabled = acceptsDataPolicy && acceptsTerms && authState !is AuthResult.Loading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFF9A825),
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.Gray
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                if (authState is AuthResult.Loading) {
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
                 } else {
-                    viewModel.register(
-                        email = email.trim(),
-                        password = clave.trim(),
-                        nombre = "$nombre $apellido".trim(),
-                        tipoUsuario = "particular"
+                    Text(
+                        text = context.getString(R.string.continue_button),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
                     )
                 }
-            },
-            enabled = acceptsDataPolicy && acceptsTerms && authState !is AuthResult.Loading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFF9A825),
-                contentColor = Color.White,
-                disabledContainerColor = Color.Gray
-            ),
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            if (authState is AuthResult.Loading) {
-                CircularProgressIndicator(
-                    color = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            } else {
-                Text("Continuar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+
+        // 👇 Diálogo modal para ver las políticas
+        if (showPolicyDialog) {
+            AlertDialog(
+                onDismissRequest = { showPolicyDialog = false },
+                title = {
+                    Text(
+                        text = stringResource(R.string.privacy_policy_title),
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFF9A825)
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.privacy_policy_content),
+                        color = Color.DarkGray,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                },
+                confirmButton = {
+                    TextButton(onClick = { showPolicyDialog = false }) {
+                        Text(stringResource(R.string.back_button), color = Color(0xFFF9A825))
+                    }
+                },
+                containerColor = Color.White
+            )
         }
     }
 }
+
 
 @Composable
 private fun StyledTextField(
@@ -178,7 +259,12 @@ private fun StyledTextField(
 }
 
 @Composable
-private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun AcceptanceRow(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onSeePolicyClick: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -192,6 +278,16 @@ private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Bool
             )
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text, color = Color.Gray, fontSize = 14.sp)
+        Text(text, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (onSeePolicyClick != null) {
+            TextButton(onClick = onSeePolicyClick) {
+                Text(
+                    text = stringResource(R.string.see_policies),
+                    color = Color(0xFFF9A825),
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
+
