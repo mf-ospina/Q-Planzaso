@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.planapp.qplanzaso.data.repository.CategoriaRepository
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Home
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.NavItem
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Profile
@@ -25,12 +26,13 @@ import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Profile
 @Composable
 fun HomeScreen(navController: NavController) {
     val navItemList = listOf(
-        NavItem(label = "Calendario", icon = Icons.Default.CalendarMonth),
-        NavItem(label = "Inicio", icon = Icons.Default.Home),
-        NavItem(label = "Perfil", icon = Icons.Default.PeopleAlt)
+        NavItem(label = "Calendario", icon = Icons.Default.CalendarMonth, route = "calendar"),
+        NavItem(label = "Inicio", icon = Icons.Default.Home, route = "home"),
+        NavItem(label = "Perfil", icon = Icons.Default.PeopleAlt, route = "profile")
     )
 
-    var selectedItemIndex by remember { mutableStateOf(1) } // Iniciamos en "Inicio" (índice 1)
+    var selectedItemIndex by remember { mutableStateOf(1) }
+    val categoria = CategoriaRepository()
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -60,16 +62,22 @@ fun HomeScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            selectedItemIndex = selectedItemIndex
+            selectedItemIndex = selectedItemIndex,
+            navController = navController
         )
     }
 }
 
 @Composable
-fun ContentScreen(modifier: Modifier = Modifier, selectedItemIndex: Int) {
+fun ContentScreen(
+    modifier: Modifier = Modifier,
+    selectedItemIndex: Int,
+    navController: NavController
+) {
     when(selectedItemIndex){
         0 -> Calendar(modifier = modifier)
-        1 -> Home(modifier = modifier)
+        // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
+        1 -> Home(modifier = modifier, navController = navController)
         2 -> Profile(modifier = modifier)
     }
 }
@@ -87,7 +95,6 @@ fun Calendar(modifier: Modifier = Modifier) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomeScreenPreview() {
-    // Se crea un NavController falso para que la preview funcione
     val navController = rememberNavController()
     HomeScreen(navController = navController)
 }

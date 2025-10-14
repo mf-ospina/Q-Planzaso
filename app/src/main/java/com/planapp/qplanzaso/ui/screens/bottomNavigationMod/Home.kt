@@ -1,121 +1,170 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-data class Category(val name: String, val color: Color)
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.planapp.qplanzaso.ui.components.CarouselView
+import com.planapp.qplanzaso.ui.screens.home.CategoriaViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+// (Datos de ejemplo y PlanCarouselItem se mantienen igual)
+data class Plan(val id: Int, val title: String)
+val samplePlans = listOf(
+    Plan(1, "Concierto Acústico"),
+    Plan(2, "Feria Gastronómica"),
+    Plan(3, "Cine al Aire Libre"),
+    Plan(4, "Taller de Pintura"),
+    Plan(5, "Yoga en el Parque")
+)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun Home(modifier: Modifier = Modifier) {
+fun Home(
+    modifier: Modifier = Modifier,
+    navController: NavController
+) {
+    val viewModel: CategoriaViewModel = viewModel()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isActive by rememberSaveable { mutableStateOf(false) }
 
-    // 1. Define the categories with their names and colors
-    val categories = listOf(
-        Category("Cultural", Color(0xFFF44336)),
-        Category("Deporte", Color(0xFF2196F3)),
-        Category("Comedia", Color(0xFFFF9800)),
-        Category("Arte", Color(0xFFF44999))  
+    val categoryColors = listOf(
+        Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800),
+        Color(0xFF4CAF50), Color(0xFF9C27B0), Color(0xFF795548)
     )
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFFFFFFFF))// Fondo morado para destacar el texto blanco
-    ) {
-        // --- Title ---
-        Text(
-            text = "Q'Planzaso",
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 50.dp)
 
-        )
-        // --- Search Bar ---
-        SearchBar(
-            query = searchQuery,
-            onQueryChange = { searchQuery = it },
-            onSearch = {
-                isActive = false // Close the search bar when search is submitted
-            },
-            active = isActive,
-            onActiveChange = { isActive = it },
-            placeholder = { Text("Buscar planes y eventos...") },
-            leadingIcon = {
-                Icon(Icons.Default.Search, contentDescription = "Buscar")
-            },
-            content = {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        when {
+            state.isLoading -> CircularProgressIndicator()
+            state.error != null -> Text(text = "Error: ${state.error}")
+            else -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(Color.White)
+                        .verticalScroll(rememberScrollState()),
+                    // AJUSTE: Añadimos un espaciado vertical uniforme entre todos los elementos
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Resultados para: $searchQuery",
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "Q'Planzaso",
+                        // AJUSTE: Reducimos ligeramente el tamaño para que sea menos abrumador
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        // AJUSTE: Reducimos un poco el padding superior para un mejor balance
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 32.dp, start = 16.dp, end = 16.dp)
                     )
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp)
-        )
+                    SearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onSearch = { isActive = false },
+                        active = isActive,
+                        onActiveChange = { it },
+                        placeholder = { Text("Buscar planes y eventos...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
+                        content = { /* ... */ },
+                        // AJUSTE: Usamos padding horizontal para alinear con el resto del contenido
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                    )
 
-        // --- Categories Row ---
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
-
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            categories.forEach { category ->
-                CategoryBox(
-                    name = category.name,
-                    color = category.color,
-                    onClick = {
-                        println("Category clicked: ${category.name}")
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        // AJUSTE: El padding vertical ya no es necesario aquí gracias al Arrangement.spacedBy
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp), // AJUSTE: Un poco más de espacio entre categorías
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        items(state.categorias) { categoria ->
+                            val color = categoryColors[state.categorias.indexOf(categoria) % categoryColors.size]
+                            CategoryBox(
+                                name = categoria.nombre,
+                                color = color,
+                                onClick = {
+                                    navController.navigate("DetailEvent/${categoria.id}")
+                                }
+                            )
+                        }
                     }
-                )
+
+                    Text(
+                        text = "Planes Destacados",
+                        style = MaterialTheme.typography.titleLarge,
+                        // AJUSTE: Padding consistente con los demás elementos
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    CarouselView(
+                        items = samplePlans,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // AJUSTE: Aumentamos un poco la altura para darle más presencia visual
+                            .height(180.dp)
+                    ) { index, plan ->
+                        val color = categoryColors[index % categoryColors.size]
+                        PlanCarouselItem(plan = plan, color = color)
+                    }
+
+                    // AJUSTE: Añadimos un espacio al final para que no quede pegado al fondo
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
     }
 }
-// Separate Composable for a single category box
+
+
+@Composable
+fun PlanCarouselItem(plan: Plan, color: Color) {
+    Card(
+        modifier = Modifier.fillMaxSize(),
+        colors = CardDefaults.cardColors(containerColor = color)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = plan.title,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+
 @Composable
 fun CategoryBox(
     name: String,
@@ -126,8 +175,7 @@ fun CategoryBox(
     Column(
         modifier = modifier
             .clickable(onClick = onClick)
-            // modificar altura de las tarjetas
-            .size(width = 80.dp, height = 50.dp)
+            .size(width = 90.dp, height = 50.dp) // AJUSTE: Un poco más ancho para que el texto respire
             .background(color, shape = RoundedCornerShape(12.dp))
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -141,10 +189,4 @@ fun CategoryBox(
             textAlign = TextAlign.Center
         )
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun HomePreview() {
-    Home()
 }

@@ -155,6 +155,7 @@ fun LoginScreen(navController: NavController) {
                         loading = true
 
                         auth.signInWithEmailAndPassword(username, password)
+
                             .addOnCompleteListener { task ->
                                 loading = false
                                 if (task.isSuccessful) {
@@ -164,6 +165,9 @@ fun LoginScreen(navController: NavController) {
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     navController.navigate("home") {
+                                        //val currentUser = auth.currentUser
+
+
                                         popUpTo("login") { inclusive = true }
                                     }
                                 } else {
