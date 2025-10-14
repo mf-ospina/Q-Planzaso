@@ -67,12 +67,12 @@ fun Home(
                         .fillMaxSize()
                         .background(Color.White)
                         .verticalScroll(rememberScrollState()),
-                    // AJUSTE: Añadimos un espaciado vertical uniforme entre todos los elementos
+                 
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
                         text = "Q'Planzaso",
-                        // AJUSTE: Reducimos ligeramente el tamaño para que sea menos abrumador
+                        
                         fontSize = 36.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -91,7 +91,7 @@ fun Home(
                         placeholder = { Text("Buscar planes y eventos...") },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
                         content = { /* ... */ },
-                        // AJUSTE: Usamos padding horizontal para alinear con el resto del contenido
+                       
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp)
@@ -99,9 +99,9 @@ fun Home(
 
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
-                        // AJUSTE: El padding vertical ya no es necesario aquí gracias al Arrangement.spacedBy
+                       
                         contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp), // AJUSTE: Un poco más de espacio entre categorías
+                        horizontalArrangement = Arrangement.spacedBy(12.dp), 
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         items(state.categorias) { categoria ->
@@ -126,14 +126,13 @@ fun Home(
                         items = samplePlans,
                         modifier = Modifier
                             .fillMaxWidth()
-                            // AJUSTE: Aumentamos un poco la altura para darle más presencia visual
+                           
                             .height(180.dp)
                     ) { index, plan ->
                         val color = categoryColors[index % categoryColors.size]
                         PlanCarouselItem(plan = plan, color = color)
                     }
 
-                    // AJUSTE: Añadimos un espacio al final para que no quede pegado al fondo
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
