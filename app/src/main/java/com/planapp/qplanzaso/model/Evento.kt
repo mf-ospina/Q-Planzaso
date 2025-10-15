@@ -32,6 +32,9 @@ data class Evento(
     var pais: String? = null,
 
     //Inscripcion
-    val inscritosIds: List<String> = emptyList() // lista de usuarios inscritos
+    val inscritosIds: List<String> = emptyList(), // lista de usuarios inscritos
+
+    //Storage
+    val imagenUrl: String? = null
 
 )
