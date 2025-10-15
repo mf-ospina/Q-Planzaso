@@ -17,6 +17,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.DetailEvent
 
 
 @Composable
@@ -39,6 +40,10 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
 
         composable("RegisterScreen") { RegisterScreen(navController) }
 
+        composable("DetailEvent/{id}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("id")
+            DetailEvent(navController, id)
+        }
     }
 }
 
