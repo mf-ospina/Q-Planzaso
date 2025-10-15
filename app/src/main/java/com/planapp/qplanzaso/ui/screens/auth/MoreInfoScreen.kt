@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -35,6 +34,7 @@ import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreInfoScreen(
     navController: NavController,
@@ -52,9 +52,24 @@ fun MoreInfoScreen(
     var acceptsDataPolicy by remember { mutableStateOf(false) }
     var acceptsTerms by remember { mutableStateOf(false) }
 
+    // Estado del BottomSheet
+    var showPolicySheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Leer archivo de políticas desde assets
+    val policyText by remember {
+        mutableStateOf(
+            try {
+                context.assets.open("politicas.txt").bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                "No se pudo cargar la política de privacidad."
+            }
+        )
+    }
+
     val authState by viewModel.authState.collectAsState()
 
-    // Control de resultado de autenticación
+    // Manejo del resultado de autenticación
     LaunchedEffect(authState) {
         when (authState) {
             is AuthResult.Success -> {
@@ -82,8 +97,7 @@ fun MoreInfoScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -146,16 +160,19 @@ fun MoreInfoScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Fila de políticas con botón
             AcceptanceRow(
                 text = stringResource(R.string.moreinfo_data_policy),
                 checked = acceptsDataPolicy,
-                onCheckedChange = { acceptsDataPolicy = it }
+                onCheckedChange = { acceptsDataPolicy = it },
+                onSeePolicyClick = { showPolicySheet = true }
             )
 
             AcceptanceRow(
                 text = stringResource(R.string.moreinfo_terms),
                 checked = acceptsTerms,
-                onCheckedChange = { acceptsTerms = it }
+                onCheckedChange = { acceptsTerms = it },
+                onSeePolicyClick = { showPolicySheet = true }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -202,8 +219,51 @@ fun MoreInfoScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+
+        // BottomSheet con políticas
+        if (showPolicySheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showPolicySheet = false },
+                sheetState = sheetState,
+                containerColor = Color.White
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight(0.9f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.privacy_policy_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFFF9A825)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = policyText,
+                        color = Color.DarkGray,
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { showPolicySheet = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+        }
     }
 }
+
+// ─────────────────────────────
+// COMPONENTES REUTILIZABLES
+// ─────────────────────────────
 
 @Composable
 private fun StyledTextField(
@@ -232,7 +292,12 @@ private fun StyledTextField(
 }
 
 @Composable
-private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun AcceptanceRow(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onSeePolicyClick: (() -> Unit)? = null
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -246,13 +311,16 @@ private fun AcceptanceRow(text: String, checked: Boolean, onCheckedChange: (Bool
             )
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text, color = Color.Gray, fontSize = 14.sp)
+        Text(text, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        if (onSeePolicyClick != null) {
+            TextButton(onClick = onSeePolicyClick) {
+                Text(
+                    text = stringResource(R.string.see_policies),
+                    color = Color(0xFFF9A825),
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PreviewMoreInfoScreen() {
-    val fakeNavController = rememberNavController()
-    MoreInfoScreen(navController = fakeNavController)
-}

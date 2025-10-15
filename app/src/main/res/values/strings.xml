@@ -56,11 +56,7 @@
     <string name="error_passwords_mismatch">Las contraseñas no coinciden</string>
     <string name="error_empty_fields">Por favor completa todos los campos</string>
     <string name="privacy_policy_title">Política de Privacidad y Tratamiento de Datos</string>
-    <string name="privacy_policy_content">
-    Tu privacidad es muy importante para nosotros. En esta aplicación recopilamos y tratamos tus datos personales
-    únicamente con el fin de ofrecerte una mejor experiencia. Los datos que ingreses (como nombre, correo o ubicación)
-    serán utilizados exclusivamente dentro de la aplicación y nunca serán compartidos con terceros sin tu consentimiento previo.
-    </string>
+    <string name="close_button">Aceptar</string>
     <string name="back_button">Cerrar</string>
     <string name="see_policies">Ver políticas</string>
 
@@ -72,8 +68,8 @@
     <string name="login_forgot_password">Olvidé mi clave</string>
     <string name="login_acceder">Acceder</string>
     <string name="login_loading">Cargando...</string>
-    <string name="login_success">Inicio de sesión exitoso ✅</string>
-    <string name="login_invalid">Credenciales inválidas ❌</string>
+    <string name="login_success">Inicio de sesión exitoso </string>
+    <string name="login_invalid">Credenciales inválidas </string>
     <string name="login_empty_fields">Completa todos los campos</string>
 
     <!-- ForgotPasswordScreen -->

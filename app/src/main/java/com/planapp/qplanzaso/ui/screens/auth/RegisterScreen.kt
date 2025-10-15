@@ -30,6 +30,7 @@ import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     navController: NavController,
@@ -46,12 +47,23 @@ fun RegisterScreen(
     var acceptsDataPolicy by remember { mutableStateOf(false) }
     var acceptsTerms by remember { mutableStateOf(false) }
 
-    // 👇 Nueva variable para controlar el diálogo
-    var showPolicyDialog by remember { mutableStateOf(false) }
+    // Estado para mostrar el BottomSheet
+    var showPolicySheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Leer políticas desde assets/politicas.txt
+    val policyText by remember {
+        mutableStateOf(
+            try {
+                context.assets.open("politicas.txt").bufferedReader().use { it.readText() }
+            } catch (e: Exception) {
+                "No se pudo cargar la política de privacidad."
+            }
+        )
+    }
 
     val authState by viewModel.authState.collectAsState()
 
-    // Control de resultado de autenticación
     LaunchedEffect(authState) {
         when (authState) {
             is AuthResult.Success -> {
@@ -64,7 +76,6 @@ fun RegisterScreen(
                     popUpTo("RegisterScreen") { inclusive = true }
                 }
             }
-
             is AuthResult.Error -> {
                 Toast.makeText(
                     context,
@@ -72,7 +83,6 @@ fun RegisterScreen(
                     Toast.LENGTH_LONG
                 ).show()
             }
-
             else -> Unit
         }
     }
@@ -130,7 +140,7 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ✅ Filas de aceptación con botón de ver políticas
+            // Filas de aceptación con botón de ver políticas
             AcceptanceRow(
                 text = context.getString(R.string.accept_data_policy),
                 checked = acceptsDataPolicy,
@@ -140,7 +150,7 @@ fun RegisterScreen(
                 text = context.getString(R.string.accept_terms),
                 checked = acceptsTerms,
                 onCheckedChange = { acceptsTerms = it },
-                onSeePolicyClick = { showPolicyDialog = true }
+                onSeePolicyClick = { showPolicySheet = true }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -196,36 +206,46 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-        // 👇 Diálogo modal para ver las políticas
-        if (showPolicyDialog) {
-            AlertDialog(
-                onDismissRequest = { showPolicyDialog = false },
-                title = {
+        // BottomSheet para mostrar las políticas desde assets
+        if (showPolicySheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showPolicySheet = false },
+                sheetState = sheetState,
+                containerColor = Color.White
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight(0.9f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
                     Text(
-                        text = stringResource(R.string.privacy_policy_title),
+                        text = "Política de Privacidad y Condiciones de Uso",
                         fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
                         color = Color(0xFFF9A825)
                     )
-                },
-                text = {
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = stringResource(R.string.privacy_policy_content),
+                        text = policyText,
                         color = Color.DarkGray,
                         fontSize = 14.sp,
                         lineHeight = 20.sp
                     )
-                },
-                confirmButton = {
-                    TextButton(onClick = { showPolicyDialog = false }) {
-                        Text(stringResource(R.string.back_button), color = Color(0xFFF9A825))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { showPolicySheet = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
                     }
-                },
-                containerColor = Color.White
-            )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
         }
     }
 }
-
 
 @Composable
 private fun StyledTextField(
@@ -290,4 +310,3 @@ private fun AcceptanceRow(
         }
     }
 }
-

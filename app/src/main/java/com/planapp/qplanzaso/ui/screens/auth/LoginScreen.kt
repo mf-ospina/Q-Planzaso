@@ -64,7 +64,7 @@ fun LoginScreen(navController: NavController) {
                     .weight(1f)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_qplanzaso),
+                    painter = painterResource(id = R.drawable.logo_min),
                     contentDescription = stringResource(R.string.login_avatar_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
