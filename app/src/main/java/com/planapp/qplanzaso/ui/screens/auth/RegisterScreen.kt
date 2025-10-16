@@ -64,25 +64,14 @@ fun RegisterScreen(
 
     val authState by viewModel.authState.collectAsState()
 
+    // Estados para los diálogos
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(authState) {
         when (authState) {
-            is AuthResult.Success -> {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.register_success),
-                    Toast.LENGTH_SHORT
-                ).show()
-                navController.navigate("login") {
-                    popUpTo("RegisterScreen") { inclusive = true }
-                }
-            }
-            is AuthResult.Error -> {
-                Toast.makeText(
-                    context,
-                    (authState as AuthResult.Error).message,
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            is AuthResult.Success -> showSuccessDialog = true
+            is AuthResult.Error -> showErrorDialog = (authState as AuthResult.Error).message
             else -> Unit
         }
     }
@@ -103,7 +92,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = context.getString(R.string.register_title),
+                text = stringResource(R.string.register_title),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.DarkGray,
@@ -120,18 +109,18 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            StyledTextField(label = context.getString(R.string.label_nombre), value = nombre, onValueChange = { nombre = it })
+            StyledTextField(label = stringResource(R.string.label_nombre), value = nombre, onValueChange = { nombre = it })
             Spacer(modifier = Modifier.height(16.dp))
-            StyledTextField(label = context.getString(R.string.label_apellido), value = apellido, onValueChange = { apellido = it })
+            StyledTextField(label = stringResource(R.string.label_apellido), value = apellido, onValueChange = { apellido = it })
             Spacer(modifier = Modifier.height(16.dp))
-            StyledTextField(label = context.getString(R.string.label_usuario), value = usuario, onValueChange = { usuario = it })
+            StyledTextField(label = stringResource(R.string.label_usuario), value = usuario, onValueChange = { usuario = it })
             Spacer(modifier = Modifier.height(16.dp))
-            StyledTextField(label = context.getString(R.string.label_clave), value = clave, onValueChange = { clave = it }, isPassword = true)
+            StyledTextField(label = stringResource(R.string.label_clave), value = clave, onValueChange = { clave = it }, isPassword = true)
             Spacer(modifier = Modifier.height(16.dp))
-            StyledTextField(label = context.getString(R.string.label_repetir_clave), value = repetirClave, onValueChange = { repetirClave = it }, isPassword = true)
+            StyledTextField(label = stringResource(R.string.label_repetir_clave), value = repetirClave, onValueChange = { repetirClave = it }, isPassword = true)
             Spacer(modifier = Modifier.height(16.dp))
             StyledTextField(
-                label = context.getString(R.string.label_email),
+                label = stringResource(R.string.label_email),
                 value = email,
                 onValueChange = { email = it },
                 keyboardType = KeyboardType.Email,
@@ -142,12 +131,12 @@ fun RegisterScreen(
 
             // Filas de aceptación con botón de ver políticas
             AcceptanceRow(
-                text = context.getString(R.string.accept_data_policy),
+                text = stringResource(R.string.accept_data_policy),
                 checked = acceptsDataPolicy,
                 onCheckedChange = { acceptsDataPolicy = it }
             )
             AcceptanceRow(
-                text = context.getString(R.string.accept_terms),
+                text = stringResource(R.string.accept_terms),
                 checked = acceptsTerms,
                 onCheckedChange = { acceptsTerms = it },
                 onSeePolicyClick = { showPolicySheet = true }
@@ -196,7 +185,7 @@ fun RegisterScreen(
                     )
                 } else {
                     Text(
-                        text = context.getString(R.string.continue_button),
+                        text = stringResource(R.string.continue_button),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -220,7 +209,7 @@ fun RegisterScreen(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Política de Privacidad y Condiciones de Uso",
+                        text = stringResource(R.string.privacy_policy_title),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = Color(0xFFF9A825)
@@ -243,6 +232,77 @@ fun RegisterScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+        }
+
+        // Diálogo de éxito
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { showSuccessDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showSuccessDialog = false
+                            navController.navigate("login") {
+                                popUpTo("RegisterScreen") { inclusive = true }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.register_success),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFFF9A825)
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.register_success),
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        // Diálogo de error
+        showErrorDialog?.let { errorMessage ->
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = null },
+                confirmButton = {
+                    Button(
+                        onClick = { showErrorDialog = null },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.error_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.Red
+                    )
+                },
+                text = {
+                    Text(
+                        text = errorMessage,
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }

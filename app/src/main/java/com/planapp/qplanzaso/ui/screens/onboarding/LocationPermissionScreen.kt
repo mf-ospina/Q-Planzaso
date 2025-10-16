@@ -2,7 +2,6 @@ package com.planapp.qplanzaso.ui.screens.onboarding
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -46,6 +45,11 @@ fun LocationPermissionScreen(
         )
     }
 
+    // Estado del diálogo
+    var showDialog by remember { mutableStateOf(false) }
+    var isSuccess by remember { mutableStateOf(false) }
+    var dialogMessage by remember { mutableStateOf("") }
+
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -53,27 +57,73 @@ fun LocationPermissionScreen(
         if (granted) {
             fusedClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
-                    Log.d("Location", "Lat:${location.latitude} Lon:${location.longitude}")
+                    dialogMessage = context.getString(R.string.location_success_message)
+                    isSuccess = true
                 } else {
-                    Log.d("Location", "Ubicación null (a veces ocurre en emulador)")
+                    dialogMessage = context.getString(R.string.location_null_message)
+                    isSuccess = false
                 }
-                navController.navigate("account_choice") {
-                    popUpTo("location") { inclusive = true }
-                }
+                showDialog = true
             }.addOnFailureListener {
-                Log.w("Location", "Error al obtener ubicación", it)
-                navController.navigate("account_choice") {
-                    popUpTo("location") { inclusive = true }
-                }
+                dialogMessage = context.getString(R.string.location_error_message)
+                isSuccess = false
+                showDialog = true
             }
         } else {
-            Log.d("Location", "Permiso denegado")
-            navController.navigate("account_choice") {
-                popUpTo("location") { inclusive = true }
-            }
+            dialogMessage = context.getString(R.string.location_denied_message)
+            isSuccess = false
+            showDialog = true
         }
     }
 
+    // Diálogo de resultado
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDialog = false
+                        navController.navigate("account_choice") {
+                            popUpTo("location") { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isSuccess) Color(0xFFF9A825) else Color.Red
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.close_button),
+                        color = Color.White
+                    )
+                }
+            },
+            title = {
+                Text(
+                    text = if (isSuccess)
+                        stringResource(R.string.dialog_success_title)
+                    else
+                        stringResource(R.string.dialog_error_title),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = if (isSuccess) Color(0xFFF9A825) else Color.Red
+                )
+            },
+            text = {
+                Text(
+                    text = dialogMessage,
+                    color = Color.DarkGray,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Contenido principal
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -149,7 +199,6 @@ fun LocationPermissionScreen(
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

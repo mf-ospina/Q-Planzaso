@@ -42,6 +42,7 @@ fun TipoOrganizadorScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
+            // Sección superior con imagen y textos
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -75,11 +76,11 @@ fun TipoOrganizadorScreen(navController: NavController) {
                 )
             }
 
+            // Sección inferior con botones
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 if (loading) {
                     CircularProgressIndicator(color = Color.White)
                 } else {
-                    // Botón Empresarial
                     Button(
                         onClick = { navController.navigate("MoreInfoScreen") },
                         colors = ButtonDefaults.buttonColors(

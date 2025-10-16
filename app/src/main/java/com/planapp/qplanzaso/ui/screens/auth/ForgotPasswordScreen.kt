@@ -1,6 +1,5 @@
 package com.planapp.qplanzaso.ui.screens.auth
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,10 +29,12 @@ import com.planapp.qplanzaso.ui.theme.LightButton
 
 @Composable
 fun ForgotPasswordScreen(navController: NavController) {
-    val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
     var email by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
@@ -117,27 +118,16 @@ fun ForgotPasswordScreen(navController: NavController) {
                             auth.sendPasswordResetEmail(email.trim())
                                 .addOnSuccessListener {
                                     loading = false
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.forgot_success),
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    navController.popBackStack()
+                                    showSuccessDialog = true
                                 }
                                 .addOnFailureListener { e ->
                                     loading = false
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.forgot_error, e.message),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    errorMessage = e.message ?: ""
+                                    showErrorDialog = true
                                 }
                         } else {
-                            Toast.makeText(
-                                context,
-                                context.getString(R.string.forgot_invalid_email),
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            errorMessage = ""
+                            showErrorDialog = true
                         }
                     },
                     modifier = Modifier
@@ -175,6 +165,77 @@ fun ForgotPasswordScreen(navController: NavController) {
                     )
                 }
             }
+        }
+
+        // Diálogo de éxito
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { showSuccessDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showSuccessDialog = false
+                            navController.popBackStack()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = DarkButton)
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.forgot_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = DarkButton
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.forgot_success),
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        // Diálogo de error
+        if (showErrorDialog) {
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = { showErrorDialog = false },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.error_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFFD32F2F)
+                    )
+                },
+                text = {
+                    Text(
+                        text = if (errorMessage.isNotEmpty())
+                            stringResource(R.string.forgot_error, errorMessage)
+                        else stringResource(R.string.forgot_invalid_email),
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }

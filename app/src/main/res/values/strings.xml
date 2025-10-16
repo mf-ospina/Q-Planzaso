@@ -8,6 +8,15 @@
     <string name="location_allow_button">Permitir ubicación</string>
     <string name="location_deny_button">Ahora no</string>
 
+    <string name="dialog_title">Aviso</string>
+    <string name="dialog_ok_button">Aceptar</string>
+    <string name="location_success_message">Ubicación obtenida con éxito</string>
+    <string name="location_null_message">No se pudo obtener la ubicación</string>
+    <string name="location_error_message">Error al obtener la ubicación</string>
+    <string name="location_denied_message">Permiso de ubicación denegado</string>
+    <string name="dialog_success_title">Ubicación habilitada</string>
+    <string name="dialog_error_title">Aviso</string>
+
     <!--  AccpuntChoice -->
     <string name="account_title">¿Tienes una cuenta?</string>
     <string name="account_subtitle">Ayúdanos a saber quién eres.</string>
@@ -40,6 +49,8 @@
     <string name="moreinfo_data_policy">Acepto el uso de tratamiento de datos.</string>
     <string name="moreinfo_terms">Acepto políticas de uso.</string>
     <string name="moreinfo_continue">Continuar</string>
+    <string name="moreinfo_accept_poli">Debes aceptar las políticas</string>
+    <string name="policy_error">No se pudo cargar la política de privacidad.</string>
 
     <!-- RegisterScreeen -->
     <string name="register_success">Registro exitoso </string>
@@ -56,14 +67,21 @@
     <string name="error_passwords_mismatch">Las contraseñas no coinciden</string>
     <string name="error_empty_fields">Por favor completa todos los campos</string>
     <string name="privacy_policy_title">Política de Privacidad y Tratamiento de Datos</string>
+    <string name="moreinfo_image_desc">Imagen empresa</string>
+    <string name="moreinfo_success">Empresa registrada correctamente </string>
     <string name="close_button">Aceptar</string>
     <string name="back_button">Cerrar</string>
     <string name="see_policies">Ver políticas</string>
+    <string name="error_title">Error</string>
+    <string name="moreinfo_success_message">Empresa registrada correctamente </string>
+    <string name="moreinfo_accept_policies_warning">Debes aceptar las políticas</string>
+    <string name="moreinfo_fill_all_warning">Completa todos los campos</string>
+
 
     <!-- LoginScreen -->
     <string name="login_avatar_desc">Avatar de usuario</string>
     <string name="login_title">¡Bienvenido de nuevo!</string>
-    <string name="login_user_label">Usuario</string>
+    <string name="login_user_label">Correo</string>
     <string name="login_password_label">Clave</string>
     <string name="login_forgot_password">Olvidé mi clave</string>
     <string name="login_acceder">Acceder</string>

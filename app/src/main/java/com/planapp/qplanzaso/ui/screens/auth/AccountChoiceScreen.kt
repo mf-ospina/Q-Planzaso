@@ -38,7 +38,7 @@ fun AccountChoiceScreen(navController: NavController) {
                 .padding(28.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Sección superior con imagen y textos
+            // Imagen y textos superiores
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -70,7 +70,7 @@ fun AccountChoiceScreen(navController: NavController) {
                 )
             }
 
-            // Sección inferior con botones
+            // Botones inferiores
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Button(
                     onClick = { navController.navigate("login") },

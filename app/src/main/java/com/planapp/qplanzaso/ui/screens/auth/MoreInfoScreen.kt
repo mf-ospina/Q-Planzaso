@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
@@ -56,13 +55,17 @@ fun MoreInfoScreen(
     var showPolicySheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // Estados para diálogos
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf<String?>(null) }
+
     // Leer archivo de políticas desde assets
     val policyText by remember {
         mutableStateOf(
             try {
                 context.assets.open("politicas.txt").bufferedReader().use { it.readText() }
             } catch (e: Exception) {
-                "No se pudo cargar la política de privacidad."
+                context.getString(R.string.policy_error)
             }
         )
     }
@@ -72,17 +75,8 @@ fun MoreInfoScreen(
     // Manejo del resultado de autenticación
     LaunchedEffect(authState) {
         when (authState) {
-            is AuthResult.Success -> {
-                Toast.makeText(context, "Empresa registrada correctamente ✅", Toast.LENGTH_SHORT).show()
-                navController.navigate("login") {
-                    popUpTo("MoreInfoScreen") { inclusive = true }
-                }
-            }
-
-            is AuthResult.Error -> {
-                Toast.makeText(context, (authState as AuthResult.Error).message, Toast.LENGTH_LONG).show()
-            }
-
+            is AuthResult.Success -> showSuccessDialog = true
+            is AuthResult.Error -> showErrorDialog = (authState as AuthResult.Error).message
             else -> Unit
         }
     }
@@ -113,7 +107,7 @@ fun MoreInfoScreen(
 
             Image(
                 painter = painterResource(id = R.drawable.img3),
-                contentDescription = stringResource(R.string.tipo_organizador_image_desc),
+                contentDescription = stringResource(R.string.moreinfo_image_desc),
                 modifier = Modifier.size(120.dp)
             )
 
@@ -130,7 +124,7 @@ fun MoreInfoScreen(
             StyledTextField(label = stringResource(R.string.moreinfo_email), value = email, onValueChange = { email = it }, keyboardType = KeyboardType.Email)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo de contraseña con icono de visibilidad
+            // Campo de contraseña
             TextField(
                 value = password,
                 onValueChange = { password = it },
@@ -152,20 +146,15 @@ fun MoreInfoScreen(
                     focusedLabelColor = Color.DarkGray,
                     unfocusedLabelColor = Color.Gray
                 ),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                )
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Fila de políticas con botón
             AcceptanceRow(
                 text = stringResource(R.string.moreinfo_data_policy),
                 checked = acceptsDataPolicy,
-                onCheckedChange = { acceptsDataPolicy = it },
-                onSeePolicyClick = { showPolicySheet = true }
+                onCheckedChange = { acceptsDataPolicy = it }
             )
 
             AcceptanceRow(
@@ -180,12 +169,12 @@ fun MoreInfoScreen(
             Button(
                 onClick = {
                     if (!acceptsDataPolicy || !acceptsTerms) {
-                        Toast.makeText(context, "Debes aceptar las políticas", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.moreinfo_accept_policies_warning), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
                     if (empresa.isBlank() || nit.isBlank() || email.isBlank() || password.isBlank()) {
-                        Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.moreinfo_fill_all_warning), Toast.LENGTH_SHORT).show()
                         return@Button
                     }
 
@@ -208,10 +197,7 @@ fun MoreInfoScreen(
                     .height(50.dp)
             ) {
                 if (authState is AuthResult.Loading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
                     Text(stringResource(R.string.moreinfo_continue), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
@@ -257,6 +243,77 @@ fun MoreInfoScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                 }
             }
+        }
+
+        // Diálogo de éxito
+        if (showSuccessDialog) {
+            AlertDialog(
+                onDismissRequest = { showSuccessDialog = false },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showSuccessDialog = false
+                            navController.navigate("login") {
+                                popUpTo("MoreInfoScreen") { inclusive = true }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.register_success),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color(0xFFF9A825)
+                    )
+                },
+                text = {
+                    Text(
+                        text = stringResource(R.string.moreinfo_success_message),
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
+        }
+
+        // Diálogo de error
+        showErrorDialog?.let { errorMessage ->
+            AlertDialog(
+                onDismissRequest = { showErrorDialog = null },
+                confirmButton = {
+                    Button(
+                        onClick = { showErrorDialog = null },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF9A825))
+                    ) {
+                        Text(stringResource(R.string.close_button), color = Color.White)
+                    }
+                },
+                title = {
+                    Text(
+                        text = stringResource(R.string.error_title),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = Color.Red
+                    )
+                },
+                text = {
+                    Text(
+                        text = errorMessage,
+                        color = Color.DarkGray,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center
+                    )
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
+            )
         }
     }
 }
@@ -323,4 +380,3 @@ private fun AcceptanceRow(
         }
     }
 }
-
