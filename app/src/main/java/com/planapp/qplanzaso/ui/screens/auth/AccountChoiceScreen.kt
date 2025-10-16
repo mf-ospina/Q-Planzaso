@@ -10,13 +10,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.R
+import com.planapp.qplanzaso.ui.theme.BackgroundColor
+import com.planapp.qplanzaso.ui.theme.LightButton
 import com.planapp.qplanzaso.ui.theme.QPlanzasoTheme
 
 @Composable
@@ -24,45 +28,75 @@ fun AccountChoiceScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFF9A3C))
+            .background(BackgroundColor)
             .padding(32.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(
-                painter = painterResource(id = R.drawable.img1),
-                contentDescription = "Avatar",
-                modifier = Modifier.size(120.dp)
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = "¿Tienes una cuenta?",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = "Ayúdanos a saber quién eres.",
-                color = Color.White.copy(alpha = 0.9f),
-                fontSize = 14.sp
-            )
-            Spacer(modifier = Modifier.height(28.dp))
-            Button(
-                onClick = { navController.navigate("login") },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB866)),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Imagen y textos superiores
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) {
-                Text("Acceder", color = Color.Black)
+                Image(
+                    painter = painterResource(id = R.drawable.img1),
+                    contentDescription = stringResource(R.string.avatar_description),
+                    modifier = Modifier.size(120.dp)
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = stringResource(R.string.account_title),
+                    color = Color.White,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
+                Text(
+                    text = stringResource(R.string.account_subtitle),
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
             }
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = {  navController.navigate("organizador")  },
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Registrarme", color = Color.Black)
+
+            // Botones inferiores
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Button(
+                    onClick = { navController.navigate("login") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LightButton,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.login_button))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = { navController.navigate("organizador") },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LightButton,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.register_button))
+                }
             }
         }
     }
@@ -72,51 +106,7 @@ fun AccountChoiceScreen(navController: NavController) {
 @Composable
 fun AccountScreenPreview() {
     QPlanzasoTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFFFF9A3C))
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Si en el preview falla al cargar el recurso, puedes reemplazarlo por un ícono temporal
-                Image(
-                    painter = painterResource(id = R.drawable.img1),
-                    contentDescription = "Avatar",
-                    modifier = Modifier.size(120.dp)
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                Text(
-                    text = "¿Tienes una cuenta?",
-                    color = Color.White,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    text = "Ayúdanos a saber quién eres.",
-                    color = Color.White.copy(alpha = 0.9f),
-                    fontSize = 14.sp
-                )
-                Spacer(modifier = Modifier.height(28.dp))
-                Button(
-                    onClick = { /* navController.navigate("login") */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB866)),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Acceder", color = Color.Black)
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { /* navController.navigate("register") */ },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Registrarme", color = Color.Black)
-                }
-            }
-        }
+        val fakeNavController = rememberNavController()
+        AccountChoiceScreen(navController = fakeNavController)
     }
 }
