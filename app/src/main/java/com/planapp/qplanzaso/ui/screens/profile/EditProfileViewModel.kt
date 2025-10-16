@@ -1,0 +1,52 @@
+// app/src/main/java/com/planapp/qplanzaso/ui/screens/profile/EditProfileViewModel.kt
+package com.planapp.qplanzaso.ui.screens.profile
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class EditProfileViewModel(
+    private val repo: ProfileRepository,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+) : ViewModel() {
+
+    private val _state = MutableStateFlow(
+        // fallback rápido con datos del registro si no hay documento todavía
+        auth.currentUser.let { u ->
+            val display = u?.displayName.orEmpty().trim()
+            val partes = display.split(" ", limit = 2)
+            ProfileFormState(
+                nombre = partes.getOrNull(0).orEmpty(),
+                apellido = partes.getOrNull(1).orEmpty(),
+                email = u?.email.orEmpty(),
+                telefono = "",
+                ubicacion = "",
+                bio = ""
+            )
+        }
+    )
+    val state: StateFlow<ProfileFormState> = _state
+
+    init {
+        viewModelScope.launch {
+            repo.flow().collect { fromDb ->
+                // si el doc viene vacío, mantenemos los defaults de Auth
+                if (fromDb != ProfileFormState()) _state.value = fromDb
+            }
+        }
+    }
+
+    fun update(newState: ProfileFormState) {
+        _state.value = newState
+    }
+
+    fun save(onSaved: () -> Unit) {
+        viewModelScope.launch {
+            repo.save(_state.value)
+            onSaved()
+        }
+    }
+}
