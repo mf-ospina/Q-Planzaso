@@ -39,35 +39,25 @@ import java.time.LocalDate
 @Composable
 fun Profile(
     modifier: Modifier = Modifier,
+    state: ProfileFormState,                 // <- viene de ProfileEntry
     onBack: () -> Unit = {},
-    onEdit: (ProfileFormState) -> Unit = {}
-) {
+    onEdit: (ProfileFormState) -> Unit = {},
+    onOpenSettings: () -> Unit = {}          // <- nuevo callback
+) { var form by remember(state) { mutableStateOf(state) }
     val today = remember { LocalDate.now() }
     val orange = MaterialTheme.colorScheme.primary
 
-    // Usuario
-    val initial = remember {
-        ProfileFormState(
-            nombre = "Nombre",
-            apellido = "Apellido",
-            email = "correo@dominio.com",
-            telefono = "",
-            ubicacion = "Bogotá",
-            bio = ""
-        )
-    }
-    var form by remember { mutableStateOf(initial) }
+    // Datos del usuario desde Firestore
+    //val form = state
 
-    // Datos sin placeholders
+    // Listas de eventos dummy locales (puedes conectar a tu fuente real luego)
     val allEvents = remember { mutableStateListOf<EventUi>() }
     val myEventsMaster = remember { mutableStateListOf<EventUi>() }
 
-    // Derivadas
     val upcoming by derivedStateOf { allEvents.filter { it.date >= today }.sortedBy { it.date } }
     val past by derivedStateOf { allEvents.filter { it.date < today }.sortedByDescending { it.date } }
     val myEvents by derivedStateOf { myEventsMaster.sortedBy { it.date } }
 
-    // UI
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 3 })
     val scope = rememberCoroutineScope()
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
@@ -89,7 +79,6 @@ fun Profile(
             .fillMaxSize()
             .padding(horizontal = 16.dp)
     ) {
-        // Top bar simétrica para centrar mejor el título
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -105,7 +94,6 @@ fun Profile(
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center
             )
-            // Caja “vacía” del tamaño de un IconButton para simetría
             Box(modifier = Modifier.size(48.dp))
         }
 
@@ -198,7 +186,6 @@ fun Profile(
                                     .padding(horizontal = 16.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                // Título + papelera cuando hay selección
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
@@ -220,42 +207,11 @@ fun Profile(
                                     }
                                 }
 
-                                // Buscar / Crear
-                                if (data.isNotEmpty()) {
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // Sin placeholder de contenido de eventos; mantenemos solo el input visual
-                                        OutlinedTextField(
-                                            value = "",
-                                            onValueChange = {},
-                                            modifier = Modifier.weight(1f),
-                                            placeholder = { Text("") },
-                                            singleLine = true,
-                                            shape = RoundedCornerShape(12.dp)
-                                        )
-                                        if (canCreateHere) {
-                                            Spacer(Modifier.width(12.dp))
-                                            Button(onClick = { /* crear */ }, shape = RoundedCornerShape(12.dp)) {
-                                                Text("Crear +")
-                                            }
-                                        }
-                                    }
-                                } else if (canCreateHere) {
-                                    Button(
-                                        onClick = { /* crear */ },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) { Text("Crear +") }
-                                }
-
-                                // Lista o mensaje vacío centrado
                                 if (data.isEmpty()) {
                                     val emptyMsg = when (page) {
-                                        0 -> "aca se mostrarán tus futuros eventos"
-                                        1 -> "aca se mostrarán tus eventos pasados"
-                                        else -> "aca se mostrarán tus eventos creados"
+                                        0 -> "Aquí se mostrarán tus eventos futuros."
+                                        1 -> "Aquí se mostrarán tus eventos pasados."
+                                        else -> "Aquí se mostrarán tus eventos creados."
                                     }
                                     Box(
                                         modifier = Modifier
@@ -283,6 +239,14 @@ fun Profile(
                                         )
                                     }
                                 }
+
+                                if (canCreateHere && data.isEmpty()) {
+                                    Button(
+                                        onClick = { /* TODO crear */ },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) { Text("Crear +") }
+                                }
                             }
                         }
                     }
@@ -293,7 +257,6 @@ fun Profile(
         }
     }
 
-    // Confirmación eliminar
     if (showConfirm) {
         val count = selectedIds.size
         AlertDialog(

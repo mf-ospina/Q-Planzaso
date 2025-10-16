@@ -26,8 +26,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Home
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.NavItem
-import com.planapp.qplanzaso.ui.screens.profile.Profile
-import com.planapp.qplanzaso.ui.screens.profile.ProfileFormState
+import com.planapp.qplanzaso.ui.screens.profile.ProfileEntry
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -87,19 +86,7 @@ private fun ContentScreen(
     when (selectedItemIndex) {
         0 -> Calendar(modifier = modifier)
         1 -> Home(modifier = modifier, navController = navController)
-        2 -> Profile(
-            modifier = modifier,
-            onBack = {
-                navController.navigate("home?tab=home") {
-                    popUpTo("home") { inclusive = true }
-                    launchSingleTop = true
-                }
-            },
-            onEdit = { form: ProfileFormState ->
-                navController.currentBackStackEntry?.savedStateHandle?.set("profile_form", form)
-                navController.navigate("edit_profile")
-            }
-        )
+        2 -> ProfileEntry(navController = navController) // usa el entry que carga Firestore
     }
 }
 

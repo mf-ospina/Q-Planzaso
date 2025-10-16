@@ -14,7 +14,6 @@ class EditProfileViewModel(
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(
-        // fallback rápido con datos del registro si no hay documento todavía
         auth.currentUser.let { u ->
             val display = u?.displayName.orEmpty().trim()
             val partes = display.split(" ", limit = 2)
@@ -32,9 +31,9 @@ class EditProfileViewModel(
 
     init {
         viewModelScope.launch {
-            repo.flow().collect { fromDb ->
-                // si el doc viene vacío, mantenemos los defaults de Auth
-                if (fromDb != ProfileFormState()) _state.value = fromDb
+            // Escucha Firestore y actualiza el estado
+            repo.data.collect { fromDb ->
+                _state.value = fromDb
             }
         }
     }
