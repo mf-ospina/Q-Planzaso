@@ -6,6 +6,8 @@ val BackgroundColor = Color(0xFFFF9A3C)
 val DarkButton = Color(0xFFE37404)
 val LightButton = Color(0xFFFFB866)
 
+val PrimaryColor = Color(0xFFFF9A40)
+
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
