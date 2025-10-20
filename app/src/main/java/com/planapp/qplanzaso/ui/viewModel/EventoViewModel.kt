@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
+import android.util.Log // Asegúrate de tener este import para el log en caso de error
 
 /**
  * ViewModel principal para manejar toda la lógica de los eventos:
@@ -64,6 +65,18 @@ class EventoViewModel(
     private var lastCommentCursor: Timestamp? = null // para paginación
 
     // ------------------------------------------
+    // 🚀 Estados para Eventos por Categoría (AÑADIDO)
+    // ------------------------------------------
+    private val _eventosPorCategoria = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosPorCategoria: StateFlow<List<Evento>> = _eventosPorCategoria
+
+    private val _loadingCategoria = MutableStateFlow(false)
+    val loadingCategoria: StateFlow<Boolean> = _loadingCategoria
+
+    private val _errorCategoria = MutableStateFlow<String?>(null)
+    val errorCategoria: StateFlow<String?> = _errorCategoria
+
+    // ------------------------------------------
     // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
     // ------------------------------------------
     fun cargarDatosIniciales() {
@@ -77,6 +90,25 @@ class EventoViewModel(
                 _error.value = "Error cargando datos iniciales: ${e.message}"
             } finally {
                 _loading.value = false
+            }
+        }
+    }
+
+    // ------------------------------------------
+    // 🔍 Cargar Eventos por Categoría (AÑADIDO)
+    // ------------------------------------------
+    fun cargarEventosPorCategoria(categoryId: String) {
+        viewModelScope.launch {
+            _loadingCategoria.value = true
+            _errorCategoria.value = null
+            try {
+                val eventos = eventoRepo.obtenerEventosPorCategoriaN(categoryId)
+                _eventosPorCategoria.value = eventos
+            } catch (e: Exception) {
+                Log.e("EventoViewModel", "Error al cargar eventos por categoría $categoryId", e)
+                _errorCategoria.value = "Error al cargar eventos: ${e.message}"
+            } finally {
+                _loadingCategoria.value = false
             }
         }
     }
@@ -359,7 +391,7 @@ class EventoViewModel(
             append("📅 Fecha: ${evento.fechaInicio?.toDate() ?: "Sin fecha"}\n")
             evento.descripcion?.let { append("\n📝 $it\n") }
             evento.ubicacion?.let {
-                append("\n📍 Ubicación: https://www.google.com/maps?q=${it.latitude},${it.longitude}\n")
+                append("\n📍 Ubicación: https://www.google.com/maps?q=$${it.latitude},${it.longitude}\n")
             }
             append("\n¡Descúbrelo en QPlanzaso! 🔗")
         }
@@ -430,8 +462,4 @@ class EventoViewModel(
             }
         }
     }
-
-
-
-
 }

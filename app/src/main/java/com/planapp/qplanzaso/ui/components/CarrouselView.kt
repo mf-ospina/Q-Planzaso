@@ -2,6 +2,7 @@ package com.planapp.qplanzaso.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -17,18 +18,20 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+
 fun <T> CarouselView(
     items: List<T>,
     modifier: Modifier = Modifier,
-    // 👇 CAMBIO 1: El contenido ahora recibe el índice y el item
     itemContent: @Composable (index: Int, item: T) -> Unit,
 ) {
+    // Almacena el estado actual del carrusel, incluyendo el número de páginas.
     val pagerState = rememberPagerState(pageCount = { items.size })
 
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Muestra el carrusel horizontal.
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -37,12 +40,13 @@ fun <T> CarouselView(
             contentPadding = PaddingValues(horizontal = 32.dp),
             pageSpacing = 16.dp
         ) { pageIndex ->
-            // 👇 CAMBIO 2: Pasamos ambos valores al contenido
+            // Renderiza el contenido definido por el usuario para cada página.
             itemContent(pageIndex, items[pageIndex])
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Muestra el indicador de posición del carrusel.
         PageIndicator(
             pagerState = pagerState,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -52,6 +56,7 @@ fun <T> CarouselView(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
+/** Indicador visual que muestra la página actual del carrusel. */
 private fun PageIndicator(
     pagerState: PagerState,
     modifier: Modifier = Modifier,

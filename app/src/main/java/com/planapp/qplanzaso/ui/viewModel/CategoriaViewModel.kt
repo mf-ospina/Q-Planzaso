@@ -18,14 +18,9 @@ data class CategoriaUiState(
 )
 
 class CategoriaViewModel : ViewModel() {
-
     private val categoriaRepository = CategoriaRepository()
-
-    // StateFlow para exponer el estado de la UI de forma segura
     private val _uiState = MutableStateFlow(CategoriaUiState())
     val uiState: StateFlow<CategoriaUiState> = _uiState.asStateFlow()
-
-    // El bloque init se ejecuta cuando el ViewModel es creado por primera vez
     init {
         cargarCategorias()
     }

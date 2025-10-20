@@ -13,19 +13,19 @@ import com.planapp.qplanzaso.ui.screens.auth.AccountChoiceScreen
 import com.planapp.qplanzaso.ui.screens.auth.ForgotPasswordScreen
 import com.planapp.qplanzaso.ui.screens.auth.MoreInfoScreen
 import com.planapp.qplanzaso.ui.screens.auth.Organizador
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.DetailEvent
-
-
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventByCategory
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     NavHost(
         navController = navController,
         startDestination = "splash",
-        modifier = modifier // 👈 aquí aplicas el padding del Scaffold
+        modifier = modifier
     ) {
         composable("splash") { SplashScreen(navController) }
         composable("location_permission") { LocationPermissionScreen(navController) }
@@ -40,10 +40,36 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
 
         composable("RegisterScreen") { RegisterScreen(navController) }
 
-        composable("DetailEvent/{id}") { backStackEntry ->
-            val id = backStackEntry.arguments?.getString("id")
-            DetailEvent(navController, id)
+        // ✅ RUTA CORREGIDA (DOS ARGUMENTOS)
+        composable(
+            route = "EventByCategory/{categoryId}/{categoryName}",
+            arguments = listOf(
+                navArgument("categoryId") { type = NavType.StringType },
+                navArgument("categoryName") {
+                    type = NavType.StringType
+                    nullable = true // Es buena práctica si no siempre lo usas, aunque aquí sí
+                }
+            )
+        ) { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
+            val categoryName = backStackEntry.arguments?.getString("categoryName")
+
+            // Asegúrate de que categoryId no sea nulo antes de usarlo
+            EventByCategory(
+                navController = navController,
+                categoryId = categoryId,
+                categoryName = categoryName
+            )
         }
+
+        composable(
+            route = "detailEvent/{encodedJson}",
+            arguments = listOf(navArgument("encodedJson") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedJson = backStackEntry.arguments?.getString("encodedJson")
+            DetailEvent(navController = navController, encodedJson = encodedJson)
+        }
+
     }
 }
 

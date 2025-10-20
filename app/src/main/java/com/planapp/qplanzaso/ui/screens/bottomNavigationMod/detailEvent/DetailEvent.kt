@@ -1,15 +1,13 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,121 +17,124 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-
-// --- 1. Modelo de datos y datos de ejemplo ---
-data class EventDetail(
-    val id: String,
-    val title: String,
-    val date: String,
-    val location: String,
-    val description: String
-)
-
-//Lo siguiente son datos de ejemplo para simular el detalle de una vista
-val sampleEventDetail = EventDetail(
-    id = "1",
-    title = "Concierto Filarmónico",
-    date = "14 Oct, 2025",
-    location = "Movistar Arena, Bogotá",
-    description = "Disfruta de una noche mágica con la orquesta filarmónica interpretando piezas clásicas y contemporáneas. Un evento imperdible para los amantes de la buena música en un ambiente único."
-)
+import com.google.firebase.Timestamp
+import com.google.gson.GsonBuilder
+import com.planapp.qplanzaso.model.Evento
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailEvent(navController: NavController, id: String?) {
-    // Por ahora, usamos los datos de ejemplo.
-    // En el futuro, usarías el 'id' para cargar los datos reales desde un ViewModel.
-    val event = sampleEventDetail
+fun DetailEvent(navController: NavController, encodedJson: String?) {
+    val evento: Evento? = remember(encodedJson) {
+        encodedJson?.let {
+            try {
+                val gson = GsonBuilder()
+                    .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
+                    .create()
+                val decodedJson = URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
+                gson.fromJson(decodedJson, Evento::class.java)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalles del Evento") },
+                title = { Text(evento?.nombre ?: "Detalle del Evento") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
+        },
+        bottomBar = {
+            evento?.let {
+                Button(
+                    onClick = { },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA726))
+                ) {
+                    Text("Inscribirse", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            // --- Placeholder de la Imagen ---
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(250.dp)
-                        .background(Color.LightGray) // El recuadro gris que simula la imagen
-                )
-            }
+        if (evento != null) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp)
+            ) {
+                item { Spacer(modifier = Modifier.height(24.dp)) }
 
-            // --- Contenido del Evento ---
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Título y botón de favorito
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = event.title,
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        IconButton(onClick = { /* Acción de favorito */ }) {
-                            Icon(Icons.Default.FavoriteBorder, contentDescription = "Favorito")
-                        }
-                    }
-
-                    // Fecha y Ubicación
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CalendarToday, contentDescription = "Fecha", modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(event.date, style = MaterialTheme.typography.bodyLarge)
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.LocationOn, contentDescription = "Lugar", modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Text(event.location, style = MaterialTheme.typography.bodyLarge)
-                        }
-                    }
-
-                    // Descripción
+                item {
+                    SectionTitle("Descripción")
                     Text(
-                        text = event.description,
-                        style = MaterialTheme.typography.bodyMedium
+                        text = evento.descripcion ?: "No hay descripción disponible.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.DarkGray
                     )
-
-                    // Botón de Acción
-                    Button(
-                        onClick = { /* Acción de comprar */ },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                    ) {
-                        Text("Comprar Entradas")
-                    }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
+
+                item {
+                    SectionTitle("Horarios")
+                    val fechaTexto = evento.fechaInicio?.let {
+                        SimpleDateFormat("dd 'de' MMMM, yyyy - hh:mm a", Locale("es", "ES")).format(it.toDate())
+                    } ?: "Fecha no especificada"
+                    Text(text = fechaTexto, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+
+                item {
+                    SectionTitle("Ubicación")
+                    Text(
+                        text = evento.direccion ?: evento.ciudad ?: "Ubicación no especificada",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.DarkGray
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Error: No se pudo cargar la información del evento. Verifique la serialización.")
             }
         }
     }
 }
 
+@Composable
+fun SectionTitle(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.headlineSmall,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+}
 
 @Preview(showBackground = true)
 @Composable
 fun DetailEventPreview() {
     MaterialTheme {
-        // Usamos un NavController de prueba para la vista previa
-        DetailEvent(navController = rememberNavController(), id = "1")
+        DetailEvent(navController = rememberNavController(), encodedJson = null)
     }
 }
