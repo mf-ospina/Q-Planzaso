@@ -18,6 +18,8 @@ import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.DetailEvent
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventSummaryScreen
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.NewEventScreen
 
 
 @Composable
@@ -44,6 +46,12 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
             val id = backStackEntry.arguments?.getString("id")
             DetailEvent(navController, id)
         }
+
+        composable("NewEventScreen") { NewEventScreen(navController) }
+        composable("EventSummaryScreen") { backStackEntry ->
+            EventSummaryScreen(navController = navController)
+        }
+
     }
 }
 

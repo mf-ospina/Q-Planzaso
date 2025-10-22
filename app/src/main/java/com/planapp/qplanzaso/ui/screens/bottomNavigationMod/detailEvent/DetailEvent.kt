@@ -1,5 +1,8 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -11,15 +14,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -35,9 +43,6 @@ import com.planapp.qplanzaso.ui.theme.BackgroundColor
 import com.planapp.qplanzaso.ui.theme.DarkButton
 import com.planapp.qplanzaso.ui.theme.LightButton
 import com.planapp.qplanzaso.ui.theme.PrimaryColor
-import kotlin.random.Random
-
-// --- Modelo y datos de ejemplo ---
 data class EventDetail(
     val id: String,
     val title: String,
@@ -73,8 +78,10 @@ fun DetailEvent(navController: NavController, id: String?) {
     var showDialog by remember { mutableStateOf(false) }
     var userRating by remember { mutableStateOf(0) } //calificacion
 
+    val context = LocalContext.current
     // ✅ Fuera del Composable: definimos los IDs de imágenes seguros
     val eventImageId = runCatching { R.drawable.img2 }.getOrDefault(android.R.drawable.ic_menu_gallery)
+
     Scaffold(
         bottomBar = {
             BottomAppBar(
@@ -238,7 +245,7 @@ fun DetailEvent(navController: NavController, id: String?) {
                         fontSize = 16.sp,
                         lineHeight = 22.sp,
                         color = Color.Gray,
-                        fontWeight =  FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold
                     )
 
                     Spacer(modifier = Modifier.height(26.dp))
@@ -259,7 +266,7 @@ fun DetailEvent(navController: NavController, id: String?) {
                                 text = "4 y 5 de Octubre",
                                 fontSize = 15.sp,
                                 color = Color.Gray,
-                                fontWeight =  FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
@@ -269,13 +276,13 @@ fun DetailEvent(navController: NavController, id: String?) {
                                 text = "11:00 a.m.",
                                 fontSize = 15.sp,
                                 color = Color.Gray,
-                                fontWeight =  FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
                                 text = "8:00 p.m.",
                                 fontSize = 15.sp,
                                 color = Color.Gray,
-                                fontWeight =  FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
 
@@ -337,7 +344,7 @@ fun DetailEvent(navController: NavController, id: String?) {
                     Text(
                         text = "Alcaldía de Bogotá",
                         fontSize = 16.sp, color = Color.Gray,
-                        fontWeight =  FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold
                     )
 
                     Spacer(modifier = Modifier.height(26.dp))
@@ -366,7 +373,7 @@ fun DetailEvent(navController: NavController, id: String?) {
                     // Calificación
 
                     Text(
-                        text ="Calificación",
+                        text = "Calificación",
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
                     )
@@ -380,6 +387,27 @@ fun DetailEvent(navController: NavController, id: String?) {
                     })
 
                     Spacer(modifier = Modifier.height(24.dp))
+
+                    // Botnes de descargar y comparit
+                    //
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconActionButton(
+                            icon = Icons.Default.Share,
+                            onClick = { shareEvent(context, event) }
+                        )
+                        Spacer(modifier = Modifier.width(24.dp))
+                        IconActionButton(
+                            icon = Icons.Default.Download,
+                            onClick = { downloadEventImage(context, R.drawable.img2) }
+                        )
+                    }
+
 
                     // Eventos relacionados
                     Text("Eventos Relacionados", fontWeight = FontWeight.Bold, fontSize = 20.sp)
@@ -438,4 +466,38 @@ fun SponsorChip(text: String) {
 fun PreviewDetailEvent() {
     val navController = rememberNavController()
     DetailEvent(navController = navController, id = "1")
+}
+
+//botones de descargar y compartir
+@Composable
+fun IconActionButton(icon: ImageVector, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(56.dp)
+            .background(Color(0xFFFFF4E5), shape = RoundedCornerShape(16.dp))
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = Color(0xFFFFA94D),
+            modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+
+fun shareEvent(context: Context, event: EventDetail) {
+    val shareIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, "¡No te pierdas ${event.title}! 📅 ${event.date} en ${event.location}")
+        type = "text/plain"
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "Compartir evento"))
+}
+
+fun downloadEventImage(context: Context, imageResId: Int) {
+    // Aquí podrías guardar la imagen en el almacenamiento.
+    // Por ahora mostramos un mensaje simulado:
+    Toast.makeText(context, "Descargando imagen del evento...", Toast.LENGTH_SHORT).show()
 }

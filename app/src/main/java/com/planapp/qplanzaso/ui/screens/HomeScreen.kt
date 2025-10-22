@@ -78,7 +78,7 @@ fun ContentScreen(
         0 -> Calendar(modifier = modifier)
         // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
         1 -> Home(modifier = modifier, navController = navController)
-        2 -> Profile(modifier = modifier)
+        2 -> Profile(modifier = modifier, navController = navController)
     }
 }
 
