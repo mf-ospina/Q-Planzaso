@@ -20,6 +20,10 @@ import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
 import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.DetailEvent
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventByCategory
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventSummaryScreen
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.NewEventScreen
+
+
 @Composable
 fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
     NavHost(
@@ -68,6 +72,9 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
         ) { backStackEntry ->
             val encodedJson = backStackEntry.arguments?.getString("encodedJson")
             DetailEvent(navController = navController, encodedJson = encodedJson)
+        composable("NewEventScreen") { NewEventScreen(navController) }
+        composable("EventSummaryScreen") { backStackEntry ->
+            EventSummaryScreen(navController = navController)
         }
 
     }

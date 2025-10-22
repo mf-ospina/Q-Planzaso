@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 
     id("com.google.gms.google-services")
+    id ("kotlin-parcelize")
 }
 
 android {
@@ -63,13 +64,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation("androidx.compose.material:material-icons-extended:1.7.2")
+    implementation("androidx.compose.material:material-icons-extended")
 
 
     implementation (platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation ("com.google.firebase:firebase-auth-ktx")
     implementation ("com.google.firebase:firebase-firestore-ktx")
-    implementation ("com.google.firebase:firebase-storage-ktx") // para el Storage
+    implementation ("com.google.firebase:firebase-storage-ktx")
 
     implementation("com.google.android.gms:play-services-location:21.0.1") //localización
     implementation("androidx.compose.material3:material3:1.1.0")
@@ -83,4 +84,6 @@ dependencies {
 
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("com.google.code.gson:gson:2.10.1")
+
+    implementation("io.coil-kt:coil-compose:2.4.0") // depencia oara subir imagenes
 }
