@@ -24,6 +24,7 @@ data class Evento(
     var calificacionesCount: Int = 0,
     var asistentesCount: Int = 0,
     var favoritosCount: Int = 0,
+    var imagen: String = "",
 
     // 🔹 ubicación:
     var ubicacion: GeoPoint? = null, // coordenadas (lat, lon)

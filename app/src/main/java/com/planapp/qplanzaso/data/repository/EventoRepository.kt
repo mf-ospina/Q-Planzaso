@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.data.repository
 
+import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -43,7 +44,7 @@ class EventoRepository {
 
     // 🔹 Obtener todos los eventos
     suspend fun obtenerEventos(): List<Evento> {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         return snapshot.toObjects(Evento::class.java)
     }
 
@@ -135,6 +136,22 @@ class EventoRepository {
         return eventos.filter {
             it.id != eventoId && it.categoriasIds.any { id -> categoriasIds.contains(id) }
         }
+    }
+
+    // 🔹 Obtener eventos relacionados (por categorías) Funcional
+    suspend fun obtenerEventosPorCategoriaN(categoryId: String): List<Evento> {
+        // 👇 AÑADE ESTAS LÍNEAS DE LOG 👇
+        Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoria' = '$categoryId'")
+
+        val snapshot = db.collection("evento")
+            .whereEqualTo("categoria", categoryId)
+            .get()
+            .await()
+
+        Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
+        // --- FIN DE LOS LOGS ---
+
+        return snapshot.toObjects(Evento::class.java)
     }
 
     // 🔹 Actualizar estadísticas (visualizaciones, favoritos, asistentes)
