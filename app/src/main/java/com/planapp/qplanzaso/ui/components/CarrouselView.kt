@@ -24,7 +24,6 @@ fun <T> CarouselView(
     modifier: Modifier = Modifier,
     itemContent: @Composable (index: Int, item: T) -> Unit,
 ) {
-    // Almacena el estado actual del carrusel, incluyendo el número de páginas.
     val pagerState = rememberPagerState(pageCount = { items.size })
 
     Column(
@@ -40,13 +39,11 @@ fun <T> CarouselView(
             contentPadding = PaddingValues(horizontal = 32.dp),
             pageSpacing = 16.dp
         ) { pageIndex ->
-            // Renderiza el contenido definido por el usuario para cada página.
             itemContent(pageIndex, items[pageIndex])
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Muestra el indicador de posición del carrusel.
         PageIndicator(
             pagerState = pagerState,
             modifier = Modifier.padding(bottom = 8.dp)
