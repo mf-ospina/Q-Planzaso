@@ -405,7 +405,6 @@ class EventoViewModel(
         val chooser = Intent.createChooser(intent, "Compartir evento con:")
         context.startActivity(chooser)
     }
-
     // ------------------------------------------
 // 🔹 Inscripciones
 // ------------------------------------------
