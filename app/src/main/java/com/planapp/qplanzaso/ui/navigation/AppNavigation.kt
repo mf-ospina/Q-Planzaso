@@ -6,59 +6,54 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavHostController
-import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
-import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
-import com.planapp.qplanzaso.ui.screens.auth.LoginScreen
-import com.planapp.qplanzaso.ui.screens.auth.AccountChoiceScreen
-import com.planapp.qplanzaso.ui.screens.auth.ForgotPasswordScreen
-import com.planapp.qplanzaso.ui.screens.auth.MoreInfoScreen
-import com.planapp.qplanzaso.ui.screens.auth.Organizador
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
+import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
+import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
-import com.planapp.qplanzaso.ui.screens.auth.RegisterScreen
-import com.planapp.qplanzaso.ui.screens.auth.TipoOrganizadorScreen
-import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.DetailEvent
-import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventByCategory
-import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.EventSummaryScreen
-import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.NewEventScreen
-
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
 
 @Composable
-fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostController = rememberNavController()) {
+fun AppNavigation(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController()
+) {
     NavHost(
         navController = navController,
         startDestination = "splash",
         modifier = modifier
     ) {
+        // Onboarding
         composable("splash") { SplashScreen(navController) }
         composable("location_permission") { LocationPermissionScreen(navController) }
-        composable("home") { HomeScreen(navController) }
+
+        // Auth
         composable("account_choice") { AccountChoiceScreen(navController) }
         composable("login") { LoginScreen(navController) }
         composable("forgot") { ForgotPasswordScreen(navController) }
-
         composable("organizador") { Organizador(navController) }
         composable("TipoOrganizadorScreen") { TipoOrganizadorScreen(navController) }
-        composable("MoreInfoScreen") { MoreInfoScreen(navController)  }
-
+        composable("MoreInfoScreen") { MoreInfoScreen(navController) }
         composable("RegisterScreen") { RegisterScreen(navController) }
 
-        // ✅ RUTA CORREGIDA (DOS ARGUMENTOS)
+        // Home
+        composable("home") { HomeScreen(navController) }
+
+        // Event by category (2 argumentos)
         composable(
             route = "EventByCategory/{categoryId}/{categoryName}",
             arguments = listOf(
                 navArgument("categoryId") { type = NavType.StringType },
                 navArgument("categoryName") {
                     type = NavType.StringType
-                    nullable = true // Es buena práctica si no siempre lo usas, aunque aquí sí
+                    nullable = true
                 }
             )
         ) { backStackEntry ->
             val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
             val categoryName = backStackEntry.arguments?.getString("categoryName")
 
-            // Asegúrate de que categoryId no sea nulo antes de usarlo
             EventByCategory(
                 navController = navController,
                 categoryId = categoryId,
@@ -66,17 +61,16 @@ fun AppNavigation(modifier: Modifier = Modifier, navController: NavHostControlle
             )
         }
 
+        // Detail Event (1 argumento JSON)
         composable(
             route = "detailEvent/{encodedJson}",
             arguments = listOf(navArgument("encodedJson") { type = NavType.StringType })
         ) { backStackEntry ->
             val encodedJson = backStackEntry.arguments?.getString("encodedJson")
             DetailEvent(navController = navController, encodedJson = encodedJson)
-        composable("NewEventScreen") { NewEventScreen(navController) }
-        composable("EventSummaryScreen") { backStackEntry ->
-            EventSummaryScreen(navController = navController)
         }
 
+        composable("NewEventScreen") { NewEventScreen(navController) }
+        composable("EventSummaryScreen") { EventSummaryScreen(navController = navController)}
     }
 }
-
