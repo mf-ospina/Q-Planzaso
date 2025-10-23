@@ -39,7 +39,6 @@ import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.Timestam
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-
 data class Plan(
     val id: Int,
     val title: String,
@@ -53,6 +52,24 @@ val samplePlans = listOf(
     Plan(4, "Actividad recreativa", "https://cartagenamusicfestival.com/wp-content/uploads/2021/06/WhatsApp-Image-2021-06-21-at-6.56.30-PM.jpeg"),
     Plan(5, "Encuentro local", "https://bogota.gov.co/sites/default/files/2025-10/planes-en-bogota-10-eventos-recomendamos-de-bienal-de-arte-2025.jpg")
 )
+
+private val colorMusica = Color(0xFFB39DDB)
+private val colorDeportes = Color(0xFFE57373)
+private val colorComedia = Color(0xFF81C7F0)
+private val colorArte = Color(0xFFF5D07A)
+private val colorDefault = Color(0xFFB0BEC5)
+
+private fun getColorForCategory(categoryName: String): Color {
+    return when (categoryName.lowercase()) {
+        "música" -> colorMusica
+        "deportes" -> colorDeportes
+        "comedia" -> colorComedia
+        "arte" -> colorArte
+        "rock" -> Color(0xFF8E8E8E)
+        else -> colorDefault
+    }
+}
+
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -88,11 +105,6 @@ fun Home(
             }
         }
     }
-
-    val categoryColors = listOf(
-        Color(0xFFF44336), Color(0xFF2196F3), Color(0xFFFF9800),
-        Color(0xFF4CAF50), Color(0xFF9C27B0), Color(0xFF795548)
-    )
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -150,13 +162,11 @@ fun Home(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             items(categoriaState.categorias) { categoria ->
-                                val color = categoryColors[categoriaState.categorias.indexOf(categoria) % categoryColors.size]
+                                val color = getColorForCategory(categoria.nombre)
                                 CategoryBox(
                                     name = categoria.nombre,
                                     color = color,
                                     onClick = {
-                                        //Log.d("QPLANZASO_DEBUG", "Navegando a categoría con ID: '${categoria.id}'")
-                                        //navController.navigate("EventByCategory/${categoria.id}")
                                         val encodedCategoryName = URLEncoder.encode(
                                             categoria.nombre,
                                             StandardCharsets.UTF_8.toString()
@@ -168,16 +178,6 @@ fun Home(
                             }
                         }
                     }
-
-                    item {
-                        Text(
-                            text = stringResource(R.string.planes_destacados),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
-                    }
-
                     item {
                         CarouselView(
                             items = samplePlans,
@@ -208,10 +208,12 @@ fun Home(
                             items = eventosFiltrados,
                             key = { evento -> evento.id ?: evento.nombre ?: System.currentTimeMillis() }
                         ) { evento ->
-                            Box(modifier = Modifier.padding(horizontal = 16.dp).height(100.dp)) {
+
+                            Box(modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .height(140.dp)) {
                                 EventCard(evento = evento) {
 
-                                    //Navegamos enviando los parametros.
                                     val gson = GsonBuilder()
                                         .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
                                         .create()
@@ -256,37 +258,24 @@ fun PlanCarouselItem(plan: Plan) {
     Card(
         modifier = Modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(16.dp)),
+
+            .clip(RoundedCornerShape(
+                topStart = 12.dp,
+                topEnd = 12.dp,
+                bottomStart = 32.dp,
+                bottomEnd = 32.dp
+            )),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(
+
+        AsyncImage(
+            model = plan.imageUrl,
+            contentDescription = plan.title,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
-        ) {
-            AsyncImage(
-                model = plan.imageUrl,
-                contentDescription = plan.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-            )
-            Text(
-                text = plan.title,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 16.dp)
-            )
-        }
+        )
     }
 }
-
 @Composable
 fun CategoryBox(
     name: String,
@@ -297,9 +286,7 @@ fun CategoryBox(
     Box(
         modifier = modifier
             .clickable(onClick = onClick)
-            .height(40.dp)
-
-            .background(color, shape = RoundedCornerShape(20.dp)),
+            .background(color, shape = RoundedCornerShape(22.dp)), // Más redondeado (píldora)
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -308,7 +295,7 @@ fun CategoryBox(
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp) // Más ancho
         )
     }
 }
