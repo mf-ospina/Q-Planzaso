@@ -11,7 +11,6 @@ data class Evento(
     var id: String? = null,
     var nombre: String = "",
     var descripcion: String = "",
-    var categoria: String = "",
     var categoriasIds: List<String> = emptyList(),
     var vibras: List<String> = emptyList(),
     var precio: Double = 0.0,

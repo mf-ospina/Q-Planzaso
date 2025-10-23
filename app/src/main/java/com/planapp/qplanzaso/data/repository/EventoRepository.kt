@@ -17,7 +17,7 @@ class EventoRepository {
 
     // 🔹 Crear evento
     suspend fun crearEvento(evento: Evento): String {
-        val docRef = db.collection("eventos").document()
+        val docRef = db.collection("evento").document()
         val id = evento.id ?: docRef.id
         docRef.set(evento.copy(id = id), SetOptions.merge()).await()
         return id
@@ -243,5 +243,10 @@ class EventoRepository {
             .await()
     }
 
+    suspend fun actualizarCampoEvento(eventoId: String, campo: String, valor: Any) {
+        db.collection("evento").document(eventoId)
+            .update(campo, valor)
+            .await()
+    }
 
 }

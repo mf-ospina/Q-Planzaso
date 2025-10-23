@@ -21,8 +21,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
+import android.net.Uri
+import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
-import android.util.Log // Asegúrate de tener este import para el log en caso de error
+import com.planapp.qplanzaso.data.repository.StorageRepository
 
 /**
  * ViewModel principal para manejar toda la lógica de los eventos:
@@ -35,7 +37,11 @@ class EventoViewModel(
     private val categoriaRepo: CategoriaRepository = CategoriaRepository(),
     private val vibraRepo: VibraRepository = VibraRepository(),
     private val comentarioRepo: ComentarioRepository = ComentarioRepository(),
-    private val inscripcionRepo: InscripcionRepository = InscripcionRepository()
+    private val inscripcionRepo: InscripcionRepository = InscripcionRepository(),
+    private val asistenciaRepo: AsistenciaRepository = AsistenciaRepository(),
+    private val storageRepo: StorageRepository = StorageRepository()
+
+
 ) : ViewModel() {
 
     // ------------------------------------------
@@ -65,8 +71,8 @@ class EventoViewModel(
     private var lastCommentCursor: Timestamp? = null // para paginación
 
     // ------------------------------------------
-    // 🚀 Estados para Eventos por Categoría (AÑADIDO)
-    // ------------------------------------------
+// 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
+// ------------------------------------------
     private val _eventosPorCategoria = MutableStateFlow<List<Evento>>(emptyList())
     val eventosPorCategoria: StateFlow<List<Evento>> = _eventosPorCategoria
 
@@ -74,7 +80,7 @@ class EventoViewModel(
     val loadingCategoria: StateFlow<Boolean> = _loadingCategoria
 
     private val _errorCategoria = MutableStateFlow<String?>(null)
-    val errorCategoria: StateFlow<String?> = _errorCategoria
+    val errorCategoria: StateFlow<String?> =_errorCategoria
 
     // ------------------------------------------
     // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
@@ -90,25 +96,6 @@ class EventoViewModel(
                 _error.value = "Error cargando datos iniciales: ${e.message}"
             } finally {
                 _loading.value = false
-            }
-        }
-    }
-
-    // ------------------------------------------
-    // 🔍 Cargar Eventos por Categoría (AÑADIDO)
-    // ------------------------------------------
-    fun cargarEventosPorCategoria(categoryId: String) {
-        viewModelScope.launch {
-            _loadingCategoria.value = true
-            _errorCategoria.value = null
-            try {
-                val eventos = eventoRepo.obtenerEventosPorCategoriaN(categoryId)
-                _eventosPorCategoria.value = eventos
-            } catch (e: Exception) {
-                Log.e("EventoViewModel", "Error al cargar eventos por categoría $categoryId", e)
-                _errorCategoria.value = "Error al cargar eventos: ${e.message}"
-            } finally {
-                _loadingCategoria.value = false
             }
         }
     }
@@ -157,14 +144,22 @@ class EventoViewModel(
     // ------------------------------------------
     // 🔹 CRUD de eventos
     // ------------------------------------------
-    fun crearEvento(evento: Evento) {
+    fun crearEvento(
+        evento: Evento,
+        onSuccess: (String) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             try {
                 _loading.value = true
-                eventoRepo.crearEvento(evento)
+
+                val eventoId = eventoRepo.crearEvento(evento)
+                onSuccess(eventoId)
                 cargarDatosIniciales()
             } catch (e: Exception) {
-                _error.value = "Error creando evento: ${e.message}"
+                val mensaje = "Error creando evento: ${e.message}"
+                _error.value = mensaje
+                onError(mensaje)
             } finally {
                 _loading.value = false
             }
@@ -391,7 +386,7 @@ class EventoViewModel(
             append("📅 Fecha: ${evento.fechaInicio?.toDate() ?: "Sin fecha"}\n")
             evento.descripcion?.let { append("\n📝 $it\n") }
             evento.ubicacion?.let {
-                append("\n📍 Ubicación: https://www.google.com/maps?q=$${it.latitude},${it.longitude}\n")
+                append("\n📍 Ubicación: https://www.google.com/maps?q=${it.latitude},${it.longitude}\n")
             }
             append("\n¡Descúbrelo en QPlanzaso! 🔗")
         }
@@ -406,8 +401,8 @@ class EventoViewModel(
         context.startActivity(chooser)
     }
     // ------------------------------------------
-// 🔹 Inscripciones
-// ------------------------------------------
+    // 🔹 Inscripciones
+    // ------------------------------------------
     fun inscribirseEnEvento(eventoId: String, usuarioId: String) {
         viewModelScope.launch {
             try {
@@ -461,4 +456,176 @@ class EventoViewModel(
             }
         }
     }
+
+    // ------------------------------------------
+    // 🔹 Asistencia real (Check-in)
+    // ------------------------------------------
+    fun registrarAsistencia(eventoId: String, usuarioId: String, lat: Double? = null, lon: Double? = null) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+                asistenciaRepo.registrarAsistencia(eventoId, usuarioId, lat, lon)
+                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+            } catch (e: Exception) {
+                _error.value = "Error registrando asistencia: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    fun verificarAsistencia(eventoId: String, usuarioId: String, callback: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val yaAsistio = asistenciaRepo.verificarAsistencia(eventoId, usuarioId)
+                callback(yaAsistio)
+            } catch (e: Exception) {
+                _error.value = "Error verificando asistencia: ${e.message}"
+                callback(false)
+            }
+        }
+    }
+
+    // ------------------------------------------
+    // 🔹 Subir Imagenes a storage
+    // ------------------------------------------
+
+    fun subirImagenEvento(uri: Uri, eventoId: String, onSuccess: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+
+                // ⿡ Subir imagen y obtener URL
+                val url = storageRepo.subirImagenEvento(uri, eventoId)
+
+                // ⿢ Actualizar solo el campo imagenUrl del evento
+                eventoRepo.actualizarCampoEvento(eventoId, "imagenUrl", url)
+
+                // ⿣ Actualizar estado local
+                val eventoActualizado = _eventoSeleccionado.value?.copy(imagenUrl = url)
+                _eventoSeleccionado.value = eventoActualizado
+
+                onSuccess(url)
+            } catch (e: Exception) {
+                _error.value = "Error subiendo imagen: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    fun reemplazarImagenEvento(urlAntigua: String?, uriNueva: Uri, eventoId: String, onSuccess: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+
+                // 1) subir nueva imagen (puede lanzar)
+                val nuevaUrl = storageRepo.reemplazarImagen(urlAntigua, uriNueva, eventoId)
+
+                // 2) obtener y validar evento existente
+                val eventoActual = eventoRepo.obtenerEvento(eventoId)
+                if (eventoActual == null) {
+                    _error.value = "Evento no encontrado para id: $eventoId"
+                    return@launch
+                }
+
+                // 3) actualizar evento con nueva URL
+                val eventoActualizado = eventoActual.copy(imagenUrl = nuevaUrl)
+                eventoRepo.editarEvento(eventoActualizado)
+
+                // 4) actualizar estado local y notificar
+                _eventoSeleccionado.value = eventoActualizado
+                onSuccess(nuevaUrl)
+
+            } catch (e: Exception) {
+                _error.value = "Error reemplazando imagen: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+
+    fun eliminarImagenEvento(eventoId: String, imagenUrl: String?) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+
+                // 1) si hay URL, eliminar del storage
+                imagenUrl?.let { url ->
+                    try {
+                        storageRepo.eliminarImagenPorUrl(url)
+                    } catch (e: Exception) {
+                        // registrar error pero continuar con la actualización en Firestore
+                        _error.value = "Advertencia: no se pudo eliminar fichero en Storage: ${e.message}"
+                    }
+                }
+
+                // 2) obtener evento actual desde Firestore
+                val eventoActual = eventoRepo.obtenerEvento(eventoId)
+                if (eventoActual == null) {
+                    _error.value = "Evento no encontrado: $eventoId"
+                    return@launch
+                }
+
+                // 3) crear copia sin la URL de imagen y guardar
+                val eventoActualizado = eventoActual.copy(imagenUrl = null)
+                eventoRepo.editarEvento(eventoActualizado)
+
+                // 4) actualizar estado local
+                _eventoSeleccionado.value = eventoActualizado
+
+            } catch (e: Exception) {
+                _error.value = "Error eliminando imagen: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    // ------------------------------------------
+    // 🔹 Logica Perfil
+    // ------------------------------------------
+    // Funcion Helper: dice si un evento ya finalizó
+    fun esEventoFinalizado(evento: Evento): Boolean {
+        val fin = evento.fechaFin
+        return fin != null && fin < Timestamp.now()
+    }
+
+    // Cargar eventos del usuario (organizador)
+    fun cargarEventosDelUsuario(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+                _eventos.value = eventoRepo.obtenerEventosPorOrganizador(usuarioId)
+            } catch (e: Exception) {
+                _error.value = "Error cargando tus eventos: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    fun cargarEventosPorCategoria(categoriaId: String) {
+        viewModelScope.launch {
+            try {
+                _loadingCategoria.value = true
+                _eventosPorCategoria.value = eventoRepo.obtenerEventosPorCategoriaN(categoriaId)
+            } catch (e: Exception) {
+                _errorCategoria.value = "Error al cargar eventos de categoría: ${e.message}"
+            } finally {
+                _loadingCategoria.value = false
+            }
+        }
+    }
+
+    suspend fun crearEventoSuspend(evento: Evento): String? {
+        return try {
+            eventoRepo.crearEvento(evento)
+        } catch (e: Exception) {
+            _error.value = "Error creando evento: ${e.message}"
+            null
+        }
+    }
+
 }
