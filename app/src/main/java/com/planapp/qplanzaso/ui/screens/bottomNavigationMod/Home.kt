@@ -53,20 +53,20 @@ val samplePlans = listOf(
     Plan(5, "Encuentro local", "https://bogota.gov.co/sites/default/files/2025-10/planes-en-bogota-10-eventos-recomendamos-de-bienal-de-arte-2025.jpg")
 )
 
-private val colorMusica = Color(0xFFB39DDB) // Morado pastel
-private val colorDeportes = Color(0xFFE57373) // Rojo pastel
-private val colorComedia = Color(0xFF81C7F0) // Azul pastel
-private val colorArte = Color(0xFFF5D07A) // Amarillo pastel
-private val colorDefault = Color(0xFFB0BEC5) // Gris pastel
+private val colorMusica = Color(0xFFB39DDB)
+private val colorDeportes = Color(0xFFE57373)
+private val colorComedia = Color(0xFF81C7F0)
+private val colorArte = Color(0xFFF5D07A)
+private val colorDefault = Color(0xFFB0BEC5)
 
 private fun getColorForCategory(categoryName: String): Color {
-    return when (categoryName.lowercase()) { // usamos lowercase para no fallar por mayúsculas
+    return when (categoryName.lowercase()) {
         "música" -> colorMusica
         "deportes" -> colorDeportes
         "comedia" -> colorComedia
         "arte" -> colorArte
-        "rock" -> Color(0xFF8E8E8E) // El color "Rock"
-        else -> colorDefault // Color por defecto si la categoría no coincide
+        "rock" -> Color(0xFF8E8E8E)
+        else -> colorDefault
     }
 }
 
