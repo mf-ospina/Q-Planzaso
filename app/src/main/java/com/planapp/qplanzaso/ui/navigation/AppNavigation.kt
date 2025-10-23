@@ -2,6 +2,7 @@ package com.planapp.qplanzaso.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -13,12 +14,15 @@ import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
+import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
+    val eventoViewModel: EventoViewModel = viewModel()
+
     NavHost(
         navController = navController,
         startDestination = "splash",
@@ -70,7 +74,23 @@ fun AppNavigation(
             DetailEvent(navController = navController, encodedJson = encodedJson)
         }
 
-        composable("NewEventScreen") { NewEventScreen(navController) }
-        composable("EventSummaryScreen") { EventSummaryScreen(navController = navController)}
+        composable("NewEventScreen") {
+            NewEventScreen(
+                navController = navController,
+                viewModel = eventoViewModel
+            )
+        }
+
+        composable("EventSummaryScreen") {
+            EventSummaryScreen(
+                navController = navController,
+                viewModel = eventoViewModel
+            )
+        }
+
+        composable("selector_ubicacion") {
+            SelectorUbicacionMapa(navController)
+        }
+
     }
 }

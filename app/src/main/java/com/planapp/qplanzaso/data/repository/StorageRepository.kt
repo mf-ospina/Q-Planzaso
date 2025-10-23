@@ -12,11 +12,11 @@ class StorageRepository {
 
     // 🔹 Subir imagen y devolver URL pública
     suspend fun subirImagenEvento(uri: Uri, eventoId: String): String {
-        val nombreArchivo = "eventos/$eventoId/${UUID.randomUUID()}.jpg"
+        val nombreArchivo = "evento/$eventoId/${UUID.randomUUID()}.jpg" // 👈 singular
         val fileRef = storageRef.child(nombreArchivo)
 
-        fileRef.putFile(uri).await() // Subir archivo
-        return fileRef.downloadUrl.await().toString() // Retornar URL pública
+        fileRef.putFile(uri).await()
+        return fileRef.downloadUrl.await().toString()
     }
 
     // 🔹 Eliminar una imagen
