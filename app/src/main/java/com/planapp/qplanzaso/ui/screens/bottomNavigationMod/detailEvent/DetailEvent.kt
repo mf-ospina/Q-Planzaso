@@ -7,16 +7,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,11 +23,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
 import com.google.gson.GsonBuilder
 import com.planapp.qplanzaso.R
@@ -46,17 +40,20 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Locale
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
 
-// ---- Patrocinadores de ejemplo ----
+// ---- Ejemplo de patrocinadores ----
 val sponsors = listOf(
     "Coca-Cola", "Google", "Adidas", "Sony", "Netflix",
     "Umbrella Corp", "Samsung", "Nvidia", "Apple"
 )
 
+// ---- Composable principal ----
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailEvent(navController: NavController, encodedJson: String?) {
-    // ✅ LÓGICA REAL para decodificar el JSON del evento
     val evento: Evento? = remember(encodedJson) {
         encodedJson?.let {
             try {
@@ -76,7 +73,6 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
     var showDialog by remember { mutableStateOf(false) }
     var userRating by remember { mutableStateOf(0) }
     val context = LocalContext.current
-    val eventImageId = runCatching { R.drawable.img2 }.getOrDefault(android.R.drawable.ic_menu_gallery)
 
     Scaffold(
         bottomBar = {
@@ -118,9 +114,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                     .fillMaxSize()
                     .background(Color.White)
             ) {
-                // 🔹 Barra superior
                 QTopBar(navController = navController, title = "Evento")
-
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Column(
@@ -129,7 +123,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Título y botón de favorito
+                    // Título y favorito
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = evento.nombre ?: "Sin título",
@@ -138,7 +132,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                             modifier = Modifier.weight(1f)
                         )
                         IconButton(
-                            onClick = { /* Acción de favorito */ },
+                            onClick = { /* Acción favorito */ },
                             modifier = Modifier.size(58.dp)
                         ) {
                             Icon(
@@ -150,285 +144,103 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
                     // Fecha y Ubicación
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(18.dp), // espacio entre fecha y ubicación
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-
                         val fechaTexto = evento.fechaInicio?.let {
-                            SimpleDateFormat("dd MMM yyyy", Locale("es", "ES"))
-                                .format(it.toDate())
+                            SimpleDateFormat("dd MMM yyyy", Locale("es", "ES")).format(it.toDate())
                         } ?: "Fecha no especificada"
 
-
-                        //  Fecha
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarToday,
-                                contentDescription = "Fecha",
-                                modifier = Modifier.size(20.dp),
-                                tint = Color.Gray
-                            )
+                            Icon(Icons.Default.CalendarToday, contentDescription = "Fecha", tint = Color.Gray, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(
-                                text = fechaTexto,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Text(fechaTexto, style = MaterialTheme.typography.bodyLarge, color = Color.Gray, fontWeight = FontWeight.SemiBold)
                         }
 
-                        //  Ubicación
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = "Lugar",
-                                modifier = Modifier.size(20.dp),
-                                tint = Color.Gray
-                            )
+                            Icon(Icons.Default.LocationOn, contentDescription = "Lugar", tint = Color.Gray, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(6.dp))
-                            /*Text(
-                                text = evento.direccion ?: evento.ciudad ?: "Ubicación no especificada",
+                            Text(
+                                evento.direccion ?: evento.ciudad ?: "Ubicación no especificada",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Color.Gray,
                                 fontWeight = FontWeight.SemiBold
-                            )*/
+                            )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(2.dp))
-                    // Imagen del evento
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    Image(
-                        painter = painterResource(id = eventImageId),
+                    // Imagen principal del evento
+                    AsyncImage(
+                        model = evento.imagenUrl,
                         contentDescription = "Foto del evento",
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(400.dp)
                             .clip(RoundedCornerShape(20.dp))
                             .background(Color.LightGray),
-                        contentScale = ContentScale.Crop
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
+                        error = painterResource(id = android.R.drawable.ic_menu_gallery)
                     )
 
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     // Categorías
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
-                    ) {
-                        Text(
-                            text = "Categorías",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        Text("Categorías", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                         Spacer(modifier = Modifier.height(8.dp))
-
-                        evento.categoriasIds?.let { categorias ->
-                            CategorySection(categories = categorias)
-                        } ?: Text(
-                            text = "No hay categorías disponibles.",
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        evento.categoriasIds?.let { CategorySection(categories = it) }
+                            ?: Text("No hay categorías disponibles.", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Descripción
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
+                        Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(evento.descripcion ?: "No hay descripción disponible.", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Patrocinadores
+                    Text("Patrocinadores", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     ) {
-                        Text(
-                            text = "Descripción",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
+                        sponsors.forEach { SponsorChip(text = it) }
+                    }
 
-                        Text(
-                            text = evento.descripcion ?: "No hay descripción disponible.",
-                            fontSize = 16.sp,
-                            lineHeight = 22.sp,
-                            color = Color.Gray,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                        Spacer(modifier = Modifier.height(26.dp))
+                    // Calificación
+                    Text("Calificación", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    RatingBar(initialRating = userRating, onRatingChanged = { userRating = it })
 
-                        // Horarios
-                        Text("Horarios", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Fecha
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                            val fechaTexto = evento.fechaInicio?.let {
-                                SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale("es", "ES")).format(it.toDate())
-                            } ?: "Fecha no especificada"
-
-                            Column {
-                                Text(
-                                    text = fechaTexto,
-                                    fontSize = 15.sp,
-                                    color = Color.Gray,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            // Horas
-                            /*Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = evento.hora,
-                                    fontSize = 15.sp,
-                                    color = Color.Gray,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }*/
-
-                        }
-
-                        Spacer(modifier = Modifier.height(26.dp))
-
-                        Text(
-                            text = "Ubicación",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = Color.Black
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Imagen placeholder de mapa
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(280.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(Color.LightGray),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ubicacion), // Imagen temporal
-                                contentDescription = "Mapa placeholder",
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(16.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-
-                            // Overlay decorativo
-                            Box(
-                                modifier = Modifier
-                                    .matchParentSize()
-                                    .background(Color.Black.copy(alpha = 0.25f))
-                            )
-
-                            Text(
-                                text = "Mapa no disponible aún",
-                                color = Color.White,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(36.dp))
-
-                        //Organizadores
-                        Text(
-                            text = "Organizadores",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Alcaldía de Bogotá",
-                            fontSize = 16.sp, color = Color.Gray,
-                            fontWeight = FontWeight.SemiBold
-                        )
-
-                        Spacer(modifier = Modifier.height(26.dp))
-
-
-                        //Patrocinadores
-                        Text(
-                            text = "Patrocinadores",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                        ) {
-                            sponsors.forEach { sponsor ->
-                                SponsorChip(text = sponsor)
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(26.dp))
-
-                        // Calificación
-                        Text(
-                            text = "Calificación",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-
-                        //lamada del componente - RatingBar
-                        RatingBar(initialRating = userRating, onRatingChanged = { newRating ->
-                            userRating = newRating
-                            // opcional: llamar a ViewModel para persistir
-                        })
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-
-                        /// Botnes de descargar y comparit
-                        //
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 16.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            IconActionButton(
-                                icon = Icons.Default.Share,
-                                onClick = { shareEvent(context, evento) }
-                            )
-                            Spacer(modifier = Modifier.width(24.dp))
-                            IconActionButton(
-                                icon = Icons.Default.Download,
-                                onClick = { downloadEventImage(context, R.drawable.img2) }
-                            )
-                        }
-
-                        // Eventos relacionados
-                        Text("Eventos Relacionados", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Image(
-                            painter = painterResource(id = R.drawable.img2),
-                            contentDescription = "Evento relacionado",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
-                                .padding(bottom = 80.dp),
-                            contentScale = ContentScale.Crop
-                        )
+                    // Botones compartir/descargar
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        IconActionButton(icon = Icons.Default.Share) { shareEvent(context, evento) }
+                        Spacer(modifier = Modifier.width(24.dp))
+                        IconActionButton(icon = Icons.Default.Download) { downloadEventImage(context, evento.imagenUrl) }
                     }
                 }
 
@@ -437,18 +249,13 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                         onDismissRequest = { showDialog = false },
                         title = { Text("¡Registro exitoso!") },
                         text = { Text("Ahora estás inscrito al evento") },
-                        confirmButton = {
-                            TextButton(onClick = { showDialog = false }) { Text("Aceptar") }
-                        }
+                        confirmButton = { TextButton(onClick = { showDialog = false }) { Text("Aceptar") } }
                     )
                 }
             }
         } else {
-            //  Fallback si falla el decode del JSON
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 Text("Error: No se pudo cargar la información del evento.")
@@ -458,13 +265,12 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
 }
 
 // ---- COMPONENTES REUTILIZADOS ----
-
 @Composable
 fun SponsorChip(text: String) {
     Surface(
         modifier = Modifier
             .border(1.dp, PrimaryColor, shape = MaterialTheme.shapes.small)
-            .padding(4.dp), // separa ligeramente cada chip
+            .padding(4.dp),
         color = Color.Transparent,
         shape = MaterialTheme.shapes.small
     ) {
@@ -477,7 +283,6 @@ fun SponsorChip(text: String) {
     }
 }
 
-//botones de descargar y compartir
 @Composable
 fun IconActionButton(icon: ImageVector, onClick: () -> Unit) {
     IconButton(
@@ -486,17 +291,11 @@ fun IconActionButton(icon: ImageVector, onClick: () -> Unit) {
             .size(56.dp)
             .background(Color(0xFFFFF4E5), shape = RoundedCornerShape(16.dp))
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = Color(0xFFFFA94D),
-            modifier = Modifier.size(28.dp)
-        )
+        Icon(icon, contentDescription = null, tint = Color(0xFFFFA94D), modifier = Modifier.size(28.dp))
     }
 }
 
 // ---- FUNCIONES DE ACCIÓN ----
-
 fun shareEvent(context: Context, evento: Evento) {
     val shareIntent = Intent().apply {
         action = Intent.ACTION_SEND
@@ -506,7 +305,10 @@ fun shareEvent(context: Context, evento: Evento) {
     context.startActivity(Intent.createChooser(shareIntent, "Compartir evento"))
 }
 
-fun downloadEventImage(context: Context, imageResId: Int) {
-    // Por ahora mostramos un mensaje simulado:
-    Toast.makeText(context, "Descargando imagen del evento...", Toast.LENGTH_SHORT).show()
+fun downloadEventImage(context: Context, imageUrl: String?) {
+    if (imageUrl.isNullOrEmpty()) {
+        Toast.makeText(context, "No hay imagen para descargar", Toast.LENGTH_SHORT).show()
+        return
+    }
+    Toast.makeText(context, "Descargando imagen desde Firebase...", Toast.LENGTH_SHORT).show()
 }

@@ -36,15 +36,22 @@ fun EventCard(evento: Evento, onClick: () -> Unit) {
         Row(
             modifier = Modifier.fillMaxSize(),
         ) {
+            // ✅ Arreglo: muestra imagen de Firebase o campo alternativo
             AsyncImage(
-                model = evento.imagen,
+                model = evento.imagenUrl?.takeIf { it.isNotEmpty() } ?: evento.imagen,
                 contentDescription = evento.nombre,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .width(130.dp)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp))
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = 12.dp,
+                            bottomStart = 12.dp // 🔹 corregido: antes estaba en 0.dp
+                        )
+                    )
             )
+
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -111,9 +118,7 @@ fun EventCard(evento: Evento, onClick: () -> Unit) {
                             evento.ubicacion!!.latitude,
                             evento.ubicacion!!.longitude
                         )
-                    } else {
-                        null
-                    }
+                    } else null
 
                     Text(
                         text = textoDireccion ?: (textoCiudad ?: (textoCoordenadas ?: "Lugar N/A")),

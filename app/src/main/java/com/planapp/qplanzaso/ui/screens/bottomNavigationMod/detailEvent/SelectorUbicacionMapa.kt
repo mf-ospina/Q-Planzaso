@@ -40,10 +40,8 @@ fun SelectorUbicacionMapa(
         position = CameraPosition.fromLatLngZoom(LatLng(4.60971, -74.08175), 12f) // Bogotá por defecto
     }
 
-    // Servicio de ubicación del dispositivo
     val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
 
-    // 🔹 Función para centrar la cámara en la ubicación actual
     fun centrarEnUbicacionActual() {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
@@ -52,9 +50,11 @@ fun SelectorUbicacionMapa(
                     scope.launch {
                         cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
                         markerPosition = latLng
-
-                        // Obtener dirección legible usando lat/lon
-                        direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(context, latLng.latitude, latLng.longitude)
+                        direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(
+                            context,
+                            latLng.latitude,
+                            latLng.longitude
+                        )
                     }
                 }
             }
@@ -76,34 +76,34 @@ fun SelectorUbicacionMapa(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Botón para centrar en la ubicación actual
                 FloatingActionButton(
                     onClick = { centrarEnUbicacionActual() }
                 ) {
                     Icon(Icons.Default.MyLocation, contentDescription = "Mi ubicación")
                 }
 
-                // Botón OK para confirmar selección y devolver datos
                 if (markerPosition != null) {
-                    FloatingActionButton(onClick = {
-                        scope.launch {
-                            val mp = markerPosition!!
-                            // si no tenemos dirección calculada, consúltala con lat/lon
-                            val dir = direccionActual ?: GeocodingUtils.obtenerDireccionDesdeCoordenadas(context, mp.latitude, mp.longitude)
+                    // ✅ Usa ExtendedFloatingActionButton con texto
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            scope.launch {
+                                val mp = markerPosition!!
+                                val dir = direccionActual ?: GeocodingUtils.obtenerDireccionDesdeCoordenadas(
+                                    context,
+                                    mp.latitude,
+                                    mp.longitude
+                                )
 
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.set("ubicacionSeleccionada", mp)
+                                navController.previousBackStackEntry?.savedStateHandle?.set("latitudSeleccionada", mp.latitude)
+                                navController.previousBackStackEntry?.savedStateHandle?.set("longitudSeleccionada", mp.longitude)
+                                navController.previousBackStackEntry?.savedStateHandle?.set("direccionSeleccionada", dir)
+                                navController.popBackStack()
+                            }
+                        },
+                        icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
+                        text = { Text("OK") }
+                    )
 
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.set("direccionSeleccionada", dir)
-
-                            navController.popBackStack()
-                        }
-                    }) {
-                        Text("OK")
-                    }
                 }
             }
         }
@@ -115,15 +115,21 @@ fun SelectorUbicacionMapa(
             cameraPositionState = cameraPositionState,
             onMapClick = { latLng ->
                 markerPosition = latLng
-                // obtener dirección usando lat/lon (no pasar LatLng)
                 scope.launch {
-                    direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(context, latLng.latitude, latLng.longitude)
+                    direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(
+                        context,
+                        latLng.latitude,
+                        latLng.longitude
+                    )
                 }
             },
             uiSettings = MapUiSettings(zoomControlsEnabled = true)
         ) {
             markerPosition?.let {
-                Marker(state = MarkerState(it), title = direccionActual ?: "Ubicación seleccionada")
+                Marker(
+                    state = MarkerState(it),
+                    title = direccionActual ?: "Ubicación seleccionada"
+                )
             }
         }
     }

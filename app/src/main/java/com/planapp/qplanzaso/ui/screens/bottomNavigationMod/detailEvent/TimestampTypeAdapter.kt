@@ -1,46 +1,49 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 
 import com.google.firebase.Timestamp
-import com.google.gson.*
-import java.lang.reflect.Type
+import com.google.gson.TypeAdapter
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import com.google.gson.stream.JsonWriter
+import java.io.IOException
 
 /**
- * Adaptador personalizado para serializar y deserializar objetos Timestamp de Firebase
+ * Gson TypeAdapter para (de)serializar com.google.firebase.Timestamp
+ * Escribe el timestamp como número de segundos (long) y lee números o strings convertibles.
  */
-class TimestampTypeAdapter : JsonSerializer<Timestamp>, JsonDeserializer<Timestamp> {
+class TimestampTypeAdapter : TypeAdapter<Timestamp?>() {
 
-    override fun serialize(
-        src: Timestamp?,
-        typeOfSrc: Type?,
-        context: JsonSerializationContext?
-    ): JsonElement {
-        return if (src == null) {
-            JsonNull.INSTANCE
-        } else {
-            JsonObject().apply {
-                addProperty("seconds", src.seconds)
-                addProperty("nanoseconds", src.nanoseconds)
-            }
+    @Throws(IOException::class)
+    override fun write(out: JsonWriter, value: Timestamp?) {
+        if (value == null) {
+            out.nullValue()
+            return
         }
+        // Guardamos solo los segundos (puedes cambiar a milliseconds si lo prefieres)
+        out.value(value.seconds)
     }
 
-    override fun deserialize(
-        json: JsonElement?,
-        typeOfT: Type?,
-        context: JsonDeserializationContext?
-    ): Timestamp? {
-        if (json == null || json.isJsonNull) {
-            return null
-        }
-
-        return try {
-            val jsonObject = json.asJsonObject
-            val seconds = jsonObject.get("seconds")?.asLong ?: 0L
-            val nanoseconds = jsonObject.get("nanoseconds")?.asInt ?: 0
-            Timestamp(seconds, nanoseconds)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
+    @Throws(IOException::class)
+    override fun read(reader: JsonReader): Timestamp? {
+        return when (reader.peek()) {
+            JsonToken.NULL -> {
+                reader.nextNull()
+                null
+            }
+            JsonToken.NUMBER -> {
+                val seconds = reader.nextLong()
+                Timestamp(seconds, 0)
+            }
+            JsonToken.STRING -> {
+                val s = reader.nextString()
+                val seconds = s.toLongOrNull() ?: 0L
+                Timestamp(seconds, 0)
+            }
+            else -> {
+                // Si viene un objeto complejo u otro tipo inesperado, consumir y devolver null
+                reader.skipValue()
+                null
+            }
         }
     }
 }
