@@ -71,6 +71,18 @@ class EventoViewModel(
     private var lastCommentCursor: Timestamp? = null // para paginación
 
     // ------------------------------------------
+// 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
+// ------------------------------------------
+    private val _eventosPorCategoria = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosPorCategoria: StateFlow<List<Evento>> = _eventosPorCategoria
+
+    private val _loadingCategoria = MutableStateFlow(false)
+    val loadingCategoria: StateFlow<Boolean> = _loadingCategoria
+
+    private val _errorCategoria = MutableStateFlow<String?>(null)
+    val errorCategoria: StateFlow<String?> =_errorCategoria
+
+    // ------------------------------------------
     // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
     // ------------------------------------------
     fun cargarDatosIniciales() {
@@ -132,14 +144,22 @@ class EventoViewModel(
     // ------------------------------------------
     // 🔹 CRUD de eventos
     // ------------------------------------------
-    fun crearEvento(evento: Evento) {
+    fun crearEvento(
+        evento: Evento,
+        onSuccess: (String) -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
         viewModelScope.launch {
             try {
                 _loading.value = true
-                eventoRepo.crearEvento(evento)
+
+                val eventoId = eventoRepo.crearEvento(evento)
+                onSuccess(eventoId)
                 cargarDatosIniciales()
             } catch (e: Exception) {
-                _error.value = "Error creando evento: ${e.message}"
+                val mensaje = "Error creando evento: ${e.message}"
+                _error.value = mensaje
+                onError(mensaje)
             } finally {
                 _loading.value = false
             }
@@ -380,7 +400,6 @@ class EventoViewModel(
         val chooser = Intent.createChooser(intent, "Compartir evento con:")
         context.startActivity(chooser)
     }
-
     // ------------------------------------------
     // 🔹 Inscripciones
     // ------------------------------------------
@@ -476,22 +495,16 @@ class EventoViewModel(
             try {
                 _loading.value = true
 
-                // 1) subir archivo y obtener URL
+                // ⿡ Subir imagen y obtener URL
                 val url = storageRepo.subirImagenEvento(uri, eventoId)
 
-                // 2) obtener el evento (suspend) de forma segura
-                val eventoActual = eventoRepo.obtenerEvento(eventoId)
-                if (eventoActual == null) {
-                    _error.value = "Evento no encontrado para id: $eventoId"
-                    return@launch
-                }
+                // ⿢ Actualizar solo el campo imagenUrl del evento
+                eventoRepo.actualizarCampoEvento(eventoId, "imagenUrl", url)
 
-                // 3) crear copia actualizada y guardar
-                val eventoActualizado = eventoActual.copy(imagenUrl = url)
-                eventoRepo.editarEvento(eventoActualizado)
-
-                // 4) actualizar estado local y notificar éxito
+                // ⿣ Actualizar estado local
+                val eventoActualizado = _eventoSeleccionado.value?.copy(imagenUrl = url)
                 _eventoSeleccionado.value = eventoActualizado
+
                 onSuccess(url)
             } catch (e: Exception) {
                 _error.value = "Error subiendo imagen: ${e.message}"
@@ -593,8 +606,26 @@ class EventoViewModel(
         }
     }
 
+    fun cargarEventosPorCategoria(categoriaId: String) {
+        viewModelScope.launch {
+            try {
+                _loadingCategoria.value = true
+                _eventosPorCategoria.value = eventoRepo.obtenerEventosPorCategoriaN(categoriaId)
+            } catch (e: Exception) {
+                _errorCategoria.value = "Error al cargar eventos de categoría: ${e.message}"
+            } finally {
+                _loadingCategoria.value = false
+            }
+        }
+    }
 
-
-
+    suspend fun crearEventoSuspend(evento: Evento): String? {
+        return try {
+            eventoRepo.crearEvento(evento)
+        } catch (e: Exception) {
+            _error.value = "Error creando evento: ${e.message}"
+            null
+        }
+    }
 
 }

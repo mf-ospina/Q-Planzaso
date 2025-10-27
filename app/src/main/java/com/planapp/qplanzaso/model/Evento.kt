@@ -11,7 +11,6 @@ data class Evento(
     var id: String? = null,
     var nombre: String = "",
     var descripcion: String = "",
-    var categoria: String = "",
     var categoriasIds: List<String> = emptyList(),
     var vibras: List<String> = emptyList(),
     var precio: Double = 0.0,
@@ -24,6 +23,7 @@ data class Evento(
     var calificacionesCount: Int = 0,
     var asistentesCount: Int = 0,
     var favoritosCount: Int = 0,
+    var imagen: String = "",
 
     // 🔹 ubicación:
     var ubicacion: GeoPoint? = null, // coordenadas (lat, lon)

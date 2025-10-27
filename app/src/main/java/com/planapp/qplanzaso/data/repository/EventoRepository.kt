@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.data.repository
 
+import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -16,7 +17,7 @@ class EventoRepository {
 
     // 🔹 Crear evento
     suspend fun crearEvento(evento: Evento): String {
-        val docRef = db.collection("eventos").document()
+        val docRef = db.collection("evento").document()
         val id = evento.id ?: docRef.id
         docRef.set(evento.copy(id = id), SetOptions.merge()).await()
         return id
@@ -43,7 +44,7 @@ class EventoRepository {
 
     // 🔹 Obtener todos los eventos
     suspend fun obtenerEventos(): List<Evento> {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         return snapshot.toObjects(Evento::class.java)
     }
 
@@ -137,6 +138,22 @@ class EventoRepository {
         }
     }
 
+    // 🔹 Obtener eventos relacionados (por categorías) Funcional
+    suspend fun obtenerEventosPorCategoriaN(categoryId: String): List<Evento> {
+        // 👇 AÑADE ESTAS LÍNEAS DE LOG 👇
+        Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoria' = '$categoryId'")
+
+        val snapshot = db.collection("evento")
+            .whereEqualTo("categoria", categoryId)
+            .get()
+            .await()
+
+        Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
+        // --- FIN DE LOS LOGS ---
+
+        return snapshot.toObjects(Evento::class.java)
+    }
+
     // 🔹 Actualizar estadísticas (visualizaciones, favoritos, asistentes)
     suspend fun actualizarEstadisticas(eventoId: String, stats: EventoStats) {
         val statsMap = mapOf(
@@ -226,5 +243,10 @@ class EventoRepository {
             .await()
     }
 
+    suspend fun actualizarCampoEvento(eventoId: String, campo: String, valor: Any) {
+        db.collection("evento").document(eventoId)
+            .update(campo, valor)
+            .await()
+    }
 
 }

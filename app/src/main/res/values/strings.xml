@@ -1,5 +1,12 @@
 <resources>
     <string name="app_name">Q-Planzaso</string>
+    <string name="buscar_eventos">Buscar planes y eventos...</string>
+    <string name="planes_destacados">Planes Destacados</string>
+    <string name="todos_eventos">Todos los Eventos</string>
+    <string name="no_eventos">No hay eventos disponibles.</string>
+    <string name="sin_resultados">No se encontraron resultados</string>
+    <string name="error_general">Ocurrió un error inesperado.</string>
+    <string name="anotaciones_visas">Anotaciones y Visas</string>
 
     <!--  Pantalla de permisos - LocationPermission -->
     <string name="map_description">Mapa</string>
