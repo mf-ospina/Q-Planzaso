@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.ui.theme.DarkButton
+import com.planapp.qplanzaso.ui.theme.DarkGrayText
 
 @Composable
 fun QTopBar(
@@ -47,7 +48,7 @@ fun QTopBar(
                 Text(
                     text = "❮",
                     fontSize = 18.sp,
-                    color = Color.DarkGray,
+                    color = DarkGrayText,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -58,7 +59,7 @@ fun QTopBar(
         // Logo + Nombre decorativo
         Text(
             text = buildAnnotatedString {
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 30.sp)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 30.sp, color = DarkGrayText)) {
                     append("Q")
                 }
                 withStyle(
@@ -70,7 +71,7 @@ fun QTopBar(
                 ) {
                     append("´")
                 }
-                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp)) {
+                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold, fontSize = 22.sp, color = DarkGrayText)) {
                     append("  $title")
                 }
             },

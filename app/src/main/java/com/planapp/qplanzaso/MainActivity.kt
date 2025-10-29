@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.google.android.gms.maps.MapsInitializer
 import com.planapp.qplanzaso.ui.theme.QPlanzasoTheme
 import com.planapp.qplanzaso.ui.navigation.AppNavigation
 
@@ -15,14 +16,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MyApp", "Firebase inicializado correctamente ✅")
+        enableEdgeToEdge()
 
         enableEdgeToEdge()
         setContent {
             QPlanzasoTheme {
-                Scaffold { innerPadding ->
-                    AppNavigation(modifier = Modifier.padding(innerPadding))
-                }
+                AppNavigation(modifier = Modifier)
             }
+        }
+
+        MapsInitializer.initialize(applicationContext, MapsInitializer.Renderer.LATEST) { renderer ->
+            Log.d("MAPS", "Google Maps renderer used: $renderer")
         }
     }
 }

@@ -1,136 +1,142 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 
 import android.annotation.SuppressLint
-import android.location.Location
 import android.content.Context
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
+import android.location.Address
+import android.location.Geocoder
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import com.planapp.qplanzaso.utils.GeocodingUtils
-import kotlinx.coroutines.launch
+import java.util.*
 
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("MissingPermission") // asumimos que el permiso ya fue solicitado antes de entrar aquí
 @Composable
-fun SelectorUbicacionMapa(
-    navController: NavController
-) {
-    val context: Context = androidx.compose.ui.platform.LocalContext.current
-    val scope = rememberCoroutineScope()
-
+fun SelectorUbicacionMapa(navController: NavController) {
+    val context = LocalContext.current
     var markerPosition by remember { mutableStateOf<LatLng?>(null) }
-    var direccionActual by remember { mutableStateOf<String?>(null) }
+    var direccionTexto by remember { mutableStateOf(TextFieldValue("")) }
+    var direccionActual by remember { mutableStateOf("") }
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(4.60971, -74.08175), 12f) // Bogotá por defecto
+        position = CameraPosition.fromLatLngZoom(LatLng(4.7110, -74.0721), 10f) // Bogotá
     }
 
-    val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
 
-    fun centrarEnUbicacionActual() {
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location: Location? ->
-                location?.let {
-                    val latLng = LatLng(it.latitude, it.longitude)
-                    scope.launch {
-                        cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-                        markerPosition = latLng
-                        direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(
-                            context,
-                            latLng.latitude,
-                            latLng.longitude
-                        )
-                    }
-                }
-            }
-    }
+        // 🏠 Campo de texto de búsqueda
+        OutlinedTextField(
+            value = direccionTexto,
+            onValueChange = { newValue -> direccionTexto = newValue },
+            label = { Text("Buscar dirección") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Seleccionar ubicación") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FloatingActionButton(
-                    onClick = { centrarEnUbicacionActual() }
-                ) {
-                    Icon(Icons.Default.MyLocation, contentDescription = "Mi ubicación")
-                }
+        Spacer(modifier = Modifier.height(8.dp))
 
-                if (markerPosition != null) {
-                    // ✅ Usa ExtendedFloatingActionButton con texto
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            scope.launch {
-                                val mp = markerPosition!!
-                                val dir = direccionActual ?: GeocodingUtils.obtenerDireccionDesdeCoordenadas(
-                                    context,
-                                    mp.latitude,
-                                    mp.longitude
-                                )
-
-                                navController.previousBackStackEntry?.savedStateHandle?.set("latitudSeleccionada", mp.latitude)
-                                navController.previousBackStackEntry?.savedStateHandle?.set("longitudSeleccionada", mp.longitude)
-                                navController.previousBackStackEntry?.savedStateHandle?.set("direccionSeleccionada", dir)
-                                navController.popBackStack()
-                            }
-                        },
-                        icon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) },
-                        text = { Text("OK") }
-                    )
-
-                }
-            }
-        }
-    ) { padding ->
-        GoogleMap(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            cameraPositionState = cameraPositionState,
-            onMapClick = { latLng ->
-                markerPosition = latLng
-                scope.launch {
-                    direccionActual = GeocodingUtils.obtenerDireccionDesdeCoordenadas(
-                        context,
-                        latLng.latitude,
-                        latLng.longitude
-                    )
+        // 🔍 Botón para buscar dirección escrita
+        Button(
+            onClick = {
+                val coords: LatLng? = obtenerCoordenadasDesdeDireccion(context, direccionTexto.text)
+                if (coords != null) {
+                    markerPosition = coords
+                    direccionActual = direccionTexto.text
+                    cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(coords, 15f))
                 }
             },
-            uiSettings = MapUiSettings(zoomControlsEnabled = true)
+            modifier = Modifier.align(Alignment.End)
         ) {
-            markerPosition?.let {
-                Marker(
-                    state = MarkerState(it),
-                    title = direccionActual ?: "Ubicación seleccionada"
+            Text("Buscar")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // 🗺️ Mapa interactivo
+        Box(modifier = Modifier.fillMaxSize()) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                onMapClick = { latLng: LatLng ->
+                    markerPosition = latLng
+                    direccionActual = obtenerDireccionDesdeCoordenadas(context, latLng)
+                }
+            ) {
+                markerPosition?.let { pos ->
+                    Marker(
+                        state = MarkerState(position = pos),
+                        title = "Ubicación seleccionada"
+                    )
+                }
+            }
+
+            // ✅ Botón flotante de confirmación
+            if (markerPosition != null) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        val mp = markerPosition!!
+                        navController.previousBackStackEntry?.savedStateHandle?.set("latitudSeleccionada", mp.latitude)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("longitudSeleccionada", mp.longitude)
+                        navController.previousBackStackEntry?.savedStateHandle?.set("direccionSeleccionada", direccionActual)
+                        navController.popBackStack()
+                    },
+                    icon = { Icon(Icons.Default.Check, contentDescription = "Confirmar") },
+                    text = { Text("Confirmar ubicación") },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 16.dp)
                 )
             }
         }
+    }
+}
+
+/**
+ * Convierte una dirección (texto) en coordenadas LatLng
+ */
+fun obtenerCoordenadasDesdeDireccion(context: Context, direccion: String): LatLng? {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val direcciones: List<Address>? = geocoder.getFromLocationName(direccion, 1)
+        if (!direcciones.isNullOrEmpty()) {
+            val ubicacion = direcciones[0]
+            LatLng(ubicacion.latitude, ubicacion.longitude)
+        } else null
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+/**
+ * Convierte coordenadas (LatLng) en una dirección legible
+ */
+fun obtenerDireccionDesdeCoordenadas(context: Context, latLng: LatLng): String {
+    return try {
+        val geocoder = Geocoder(context, Locale.getDefault())
+        val direcciones: List<Address>? = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        if (!direcciones.isNullOrEmpty()) {
+            direcciones[0].getAddressLine(0) ?: "Dirección no disponible"
+        } else {
+            "Dirección no disponible"
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        "Dirección no disponible"
     }
 }

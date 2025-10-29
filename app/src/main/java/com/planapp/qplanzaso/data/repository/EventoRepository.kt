@@ -61,7 +61,6 @@ class EventoRepository {
     // 🔹 Filtro avanzado por múltiples criterios
     suspend fun filtrarEventos(
         categoriasIds: List<String>? = null,
-        vibras: List<String>? = null,
         fechaInicioParam: Timestamp? = null,
         fechaFinParam: Timestamp? = null,
         precioMax: Double? = null,
@@ -81,13 +80,6 @@ class EventoRepository {
         if (!categoriasIds.isNullOrEmpty()) {
             eventos = eventos.filter { evento ->
                 evento.categoriasIds.any { id -> categoriasIds.contains(id) }
-            }
-        }
-
-        // 🔸 Filtrar por vibras
-        if (!vibras.isNullOrEmpty()) {
-            eventos = eventos.filter { evento ->
-                evento.vibras.any { v -> vibras.contains(v) }
             }
         }
 

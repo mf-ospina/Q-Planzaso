@@ -34,14 +34,16 @@ fun EventSummaryScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val formData = navController.previousBackStackEntry?.savedStateHandle?.get<EventFormData>("formData")
+
     if (formData == null) {
         Text("No hay datos del evento para mostrar")
         return
     }
 
     var mensaje by remember { mutableStateOf("") }
-
     var imagenPreview by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    // Cargar imagen local
     LaunchedEffect(formData.imagenUri) {
         formData.imagenUri?.let { uri ->
             val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -70,14 +72,14 @@ fun EventSummaryScreen(
                             val evento = Evento(
                                 nombre = formData.nombre,
                                 descripcion = formData.descripcion,
-                                categoriasIds = listOf(formData.categoriaId),
-                                vibras = formData.vibras,
-                                precio = formData.precio,
+                                categoriasIds = formData.categoriaId,
                                 fechaInicio = formData.fechaInicio,
                                 fechaFin = formData.fechaFin,
-                                organizadorId = formData.organizadorId,
-                                ubicacion = formData.ubicacion,
+                                precio = formData.precio,
+                                patrocinadores = formData.patrocinadores,
                                 direccion = formData.direccion,
+                                ubicacion = formData.ubicacion,
+                                organizadorId = formData.organizadorId,
                                 imagenUrl = null
                             )
 
@@ -136,8 +138,16 @@ fun EventSummaryScreen(
             Text("📛 ${formData.nombre}")
             Text("📝 ${formData.descripcion}")
             Text("🏷 ${formData.categoriaNombre}")
-            Text("📍 ${formData.direccion}")
+            Text("🏷 ${formData.fechaInicio}")
+            Text("🏷 ${formData.fechaFin}")
             Text("💰 $${formData.precio}")
+            Text("🏷 ${formData.patrocinadores}")
+            if (formData.patrocinadores.isNotEmpty()) {
+                Text("🤝 Patrocinadores:", style = MaterialTheme.typography.labelLarge)
+                Text(formData.patrocinadores.joinToString(", "))
+            }
+            Text("📍 ${formData.direccion}")
+
         }
     }
 }

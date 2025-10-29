@@ -9,6 +9,10 @@ val PrimaryColor = Color(0xFFFF9A40)
 
 val boxBackground = Color(0xFFFCDEC3)
 
+val LightSelector = Color(0xFFFFE5CC)
+
+val DarkGrayText = Color(0xFF333333) // gris oscuro para los textos
+
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)
 val Pink80 = Color(0xFFEFB8C8)

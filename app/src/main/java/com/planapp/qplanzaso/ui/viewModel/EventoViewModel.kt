@@ -8,12 +8,10 @@ import com.google.firebase.firestore.GeoPoint
 import com.planapp.qplanzaso.data.repository.CategoriaRepository
 import com.planapp.qplanzaso.data.repository.ComentarioRepository
 import com.planapp.qplanzaso.data.repository.EventoRepository
-import com.planapp.qplanzaso.data.repository.VibraRepository
 import com.planapp.qplanzaso.model.Categoria
 import com.planapp.qplanzaso.model.ComentarioEvento
 import com.planapp.qplanzaso.model.Evento
 import com.planapp.qplanzaso.model.EventoStats
-import com.planapp.qplanzaso.model.Vibra
 import com.planapp.qplanzaso.utils.GeocodingUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,9 +20,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.google.android.gms.maps.model.LatLng
 import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
+import com.planapp.qplanzaso.model.EventFormData
 
 /**
  * ViewModel principal para manejar toda la lógica de los eventos:
@@ -35,7 +38,6 @@ import com.planapp.qplanzaso.data.repository.StorageRepository
 class EventoViewModel(
     private val eventoRepo: EventoRepository = EventoRepository(),
     private val categoriaRepo: CategoriaRepository = CategoriaRepository(),
-    private val vibraRepo: VibraRepository = VibraRepository(),
     private val comentarioRepo: ComentarioRepository = ComentarioRepository(),
     private val inscripcionRepo: InscripcionRepository = InscripcionRepository(),
     private val asistenciaRepo: AsistenciaRepository = AsistenciaRepository(),
@@ -52,10 +54,6 @@ class EventoViewModel(
 
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias
-
-    private val _vibras = MutableStateFlow<List<Vibra>>(emptyList())
-    val vibras: StateFlow<List<Vibra>> = _vibras
-
     private val _eventoSeleccionado = MutableStateFlow<Evento?>(null)
     val eventoSeleccionado: StateFlow<Evento?> = _eventoSeleccionado
 
@@ -82,6 +80,23 @@ class EventoViewModel(
     private val _errorCategoria = MutableStateFlow<String?>(null)
     val errorCategoria: StateFlow<String?> =_errorCategoria
 
+    //Variables para campos de formulario de crear nuevo evento
+    // Campos del formulario
+    var nombre by mutableStateOf("")
+    var descripcion by mutableStateOf("")
+    var categoriasSeleccionadas by mutableStateOf<List<Categoria>>(emptyList())
+    var fechaInicio by mutableStateOf<Timestamp?>(null)
+    var fechaFin by mutableStateOf<Timestamp?>(null)
+    var precio by mutableStateOf("")
+
+    var patrocinadores by mutableStateOf<List<String>>(emptyList())
+
+    var direccion by mutableStateOf("")
+    var imagenUri by mutableStateOf<Uri?>(null)
+    var ubicacionLatLng by mutableStateOf<LatLng?>(null)
+    var direccionMapa by mutableStateOf<String?>(null)
+
+
     // ------------------------------------------
     // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
     // ------------------------------------------
@@ -90,7 +105,6 @@ class EventoViewModel(
             try {
                 _loading.value = true
                 _categorias.value = categoriaRepo.obtenerCategoriasActivas()
-                _vibras.value = vibraRepo.obtenerVibrasActivas()
                 _eventos.value = eventoRepo.obtenerEventos()
             } catch (e: Exception) {
                 _error.value = "Error cargando datos iniciales: ${e.message}"
@@ -118,7 +132,6 @@ class EventoViewModel(
 
     fun aplicarFiltros(
         categoriasIds: List<String>? = null,
-        vibras: List<String>? = null,
         fechaInicio: Timestamp? = null,
         fechaFin: Timestamp? = null,
         precioMax: Double? = null,
@@ -130,7 +143,7 @@ class EventoViewModel(
             try {
                 _loading.value = true
                 _eventos.value = eventoRepo.filtrarEventos(
-                    categoriasIds, vibras, fechaInicio, fechaFin,
+                    categoriasIds, fechaInicio, fechaFin,
                     precioMax, ubicacionActual, maxDistanciaKm, soloVerificados
                 )
             } catch (e: Exception) {
@@ -164,6 +177,47 @@ class EventoViewModel(
                 _loading.value = false
             }
         }
+    }
+
+    // Funiones para mantener los datos en el formualrio de crear evento
+    // ---------- FUNCIONES DE FORMULARIO ----------
+
+    /** Guarda los datos del formulario en un objeto EventFormData */
+    fun toFormData(organizadorId: String): EventFormData? {
+        val geoPoint = ubicacionLatLng?.let { GeoPoint(it.latitude, it.longitude) }
+        if (nombre.isBlank() || descripcion.isBlank() || categoriasSeleccionadas.isEmpty() ||
+            fechaInicio == null || fechaFin == null || direccion.isBlank() ||
+            imagenUri == null || geoPoint == null
+        ) return null
+
+        return EventFormData(
+            nombre = nombre,
+            descripcion = descripcion,
+            categoriaId = categoriasSeleccionadas.map { it.id },
+            categoriaNombre = categoriasSeleccionadas.map { it.nombre },
+            fechaInicio = fechaInicio!!,
+            fechaFin = fechaFin!!,
+            precio = precio.toDoubleOrNull() ?: 0.0,
+            patrocinadores = patrocinadores,
+            direccion = direccion,
+            ubicacion = geoPoint,
+            imagenUri = imagenUri,
+            organizadorId = organizadorId
+        )
+    }
+
+    /** Limpia el formulario después de crear un evento o cancelar */
+    fun clearForm() {
+        nombre = ""
+        descripcion = ""
+        categoriasSeleccionadas = emptyList()
+        fechaInicio = null
+        fechaFin = null
+        precio = ""
+        direccion = ""
+        imagenUri = null
+        ubicacionLatLng = null
+        direccionMapa = null
     }
 
     fun editarEvento(evento: Evento) {

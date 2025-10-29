@@ -43,6 +43,7 @@ import java.util.Locale
 import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
+import com.planapp.qplanzaso.ui.theme.DarkGrayText
 
 // ---- Ejemplo de patrocinadores ----
 val sponsors = listOf(
@@ -129,7 +130,8 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                             text = evento.nombre ?: "Sin título",
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            color = DarkGrayText
                         )
                         IconButton(
                             onClick = { /* Acción favorito */ },
@@ -194,17 +196,17 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
 
                     // Categorías
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-                        Text("Categorías", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Categorías", fontWeight = FontWeight.Bold, fontSize = 20.sp, color= DarkGrayText)
                         Spacer(modifier = Modifier.height(8.dp))
                         evento.categoriasIds?.let { CategorySection(categories = it) }
-                            ?: Text("No hay categorías disponibles.", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
+                            ?: Text("No hay categorías disponibles.", fontSize = 16.sp, color = DarkGrayText, fontWeight = FontWeight.SemiBold)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Descripción
                     Column(modifier = Modifier.padding(start = 16.dp)) {
-                        Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text("Descripción", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = DarkGrayText)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(evento.descripcion ?: "No hay descripción disponible.", fontSize = 16.sp, color = Color.Gray, fontWeight = FontWeight.SemiBold)
                     }

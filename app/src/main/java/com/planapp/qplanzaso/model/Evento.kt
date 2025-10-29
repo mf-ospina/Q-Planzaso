@@ -14,6 +14,8 @@ data class Evento(
     var categoriasIds: List<String> = emptyList(),
     var vibras: List<String> = emptyList(),
     var precio: Double = 0.0,
+    // 🔹 Patrocinadores
+    var patrocinadores: List<String> = emptyList(),
     var fechaInicio: Timestamp? = null,
     var fechaFin: Timestamp? = null,
     var organizadorId: String = "",
