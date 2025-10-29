@@ -183,6 +183,10 @@ class EventoViewModel(
     // ---------- FUNCIONES DE FORMULARIO ----------
 
     /** Guarda los datos del formulario en un objeto EventFormData */
+    // Funiones para mantener los datos en el formualrio de crear evento
+    // ---------- FUNCIONES DE FORMULARIO ----------
+
+    /** Guarda los datos del formulario en un objeto EventFormData */
     fun toFormData(organizadorId: String): EventFormData? {
         val geoPoint = ubicacionLatLng?.let { GeoPoint(it.latitude, it.longitude) }
         if (nombre.isBlank() || descripcion.isBlank() || categoriasSeleccionadas.isEmpty() ||
@@ -214,6 +218,7 @@ class EventoViewModel(
         fechaInicio = null
         fechaFin = null
         precio = ""
+        patrocinadores = emptyList()
         direccion = ""
         imagenUri = null
         ubicacionLatLng = null

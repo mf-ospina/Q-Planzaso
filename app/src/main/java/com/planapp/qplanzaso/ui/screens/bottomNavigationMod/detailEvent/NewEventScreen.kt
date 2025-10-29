@@ -17,6 +17,7 @@
     import androidx.compose.material.icons.Icons
     import androidx.compose.material.icons.filled.Add
     import androidx.compose.foundation.lazy.items
+    import androidx.compose.foundation.text.KeyboardOptions
     import androidx.compose.material.icons.filled.CalendarToday
     import androidx.compose.material.icons.filled.Close
     import androidx.compose.material.icons.filled.LocationOn
@@ -31,6 +32,7 @@
     import androidx.compose.ui.layout.ContentScale
     import androidx.compose.ui.platform.LocalContext
     import androidx.compose.ui.text.font.FontWeight
+    import androidx.compose.ui.text.input.KeyboardType
     import androidx.compose.ui.unit.dp
     import androidx.compose.ui.unit.sp
     import androidx.navigation.NavController
@@ -209,11 +211,21 @@
 
                     OutlinedTextField(
                         value = precio,
-                        onValueChange = { precio = it },
+                        onValueChange = { input ->
+                            // Acepta cualquier número o decimal
+                            if (input.matches(Regex("^\\d*([.,]?\\d*)?$"))) {
+                                precio = input
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(8.dp),
                         leadingIcon = {
-                            Text( text = "$", color = Color.Gray, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = "$",
+                                color = Color.Gray,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BackgroundColor,
@@ -222,8 +234,12 @@
                             unfocusedContainerColor = boxBackground,
                             focusedTextColor = Color.Gray,
                             unfocusedTextColor = Color.Gray
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal
                         )
                     )
+
 
                     Spacer(Modifier.height(2.dp))
 
@@ -520,7 +536,7 @@
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
     @Composable
     fun SelectorDeCategorias(
         categoriasDisponibles: List<com.planapp.qplanzaso.model.Categoria>,
@@ -540,40 +556,38 @@
             Spacer(modifier = Modifier.height(8.dp))
 
             Box {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (categoriasSeleccionadas.isEmpty()) {
-                        item {
+                Column {
+                    // 🔹 FlowRow: reemplaza LazyRow para que las categorías se distribuyan en varias líneas
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (categoriasSeleccionadas.isEmpty()) {
                             Text(
                                 text = "Ninguna categoría seleccionada",
                                 color = Color.Gray,
                                 fontSize = 14.sp
                             )
+                        } else {
+                            categoriasSeleccionadas.forEach { categoria ->
+                                ChipItemRemovible(
+                                    label = categoria.nombre,
+                                    onRemove = {
+                                        val nuevas = categoriasSeleccionadas.toMutableList()
+                                        nuevas.remove(categoria)
+                                        onCategoriasSeleccionadas(nuevas)
+                                    }
+                                )
+                            }
                         }
-                    } else {
-                        // 🔹 Mostrar chips con opción de eliminar
-                        items(categoriasSeleccionadas, key = { it.id }) { categoria ->
-                            ChipItemRemovible(
-                                label = categoria.nombre,
-                                onRemove = {
-                                    val nuevas = categoriasSeleccionadas.toMutableList()
-                                    nuevas.remove(categoria)
-                                    onCategoriasSeleccionadas(nuevas)
-                                }
-                            )
-                        }
-                    }
 
-                    // 🔹 Botón para abrir el menú
-                    item {
+                        // 🔹 Botón para abrir menú de categorías
                         IconButton(
                             onClick = { expanded = true },
                             modifier = Modifier
                                 .size(42.dp)
-                                .background(Color(0xFFFFBA74), RoundedCornerShape(8.dp))
+                                .background(Color(0xFFFFBA74), RoundedCornerShape(20.dp))
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -598,7 +612,7 @@
                             text = {
                                 Text(
                                     categoria.nombre,
-                                    color = Color(0xFF333333), // texto oscuro legible
+                                    color = Color(0xFF333333),
                                     fontSize = 15.sp
                                 )
                             },
@@ -616,6 +630,7 @@
             }
         }
     }
+
 
     @Composable
     fun ChipItemRemovible(label: String, onRemove: () -> Unit) {

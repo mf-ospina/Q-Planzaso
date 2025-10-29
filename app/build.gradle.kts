@@ -1,3 +1,4 @@
+import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +6,13 @@ plugins {
 
     id("com.google.gms.google-services")
     id ("kotlin-parcelize")
+}
+
+// ✅ Cargar el archivo local.properties antes del bloque android
+val localProperties = Properties()
+val localFile = rootProject.file("local.properties")
+if (localFile.exists()) {
+    localFile.inputStream().use { localProperties.load(it) }
 }
 
 android {
@@ -19,6 +27,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // ✅ Pasar la API key al manifest
+        manifestPlaceholders.putAll(
+            mapOf("MAPS_API_KEY" to (localProperties.getProperty("MAPS_API_KEY") ?: ""))
+        )
     }
 
     buildTypes {
