@@ -68,6 +68,25 @@ class EventoViewModel(
 
     private var lastCommentCursor: Timestamp? = null // para paginación
 
+    private val _calificacionUsuario = MutableStateFlow<Int?>(null)
+    val calificacionUsuario: StateFlow<Int?> = _calificacionUsuario
+
+    /**
+     * Carga la calificación que el usuario actual le dio al evento.
+     */
+    fun cargarCalificacionUsuario(eventoId: String, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                // Llama al nuevo método del repositorio
+                val ratingDouble = eventoRepo.obtenerCalificacionUsuario(eventoId, usuarioId)
+
+                // Actualiza el StateFlow (convierte a Int o lo deja en null)
+                _calificacionUsuario.value = ratingDouble?.toInt()
+            } catch (e: Exception) {
+                _error.value = "Error al cargar la calificación del usuario: ${e.message}"
+            }
+        }
+    }
     // ------------------------------------------
 // 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
 // ------------------------------------------
@@ -371,12 +390,20 @@ class EventoViewModel(
     fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
         viewModelScope.launch {
             try {
+                println("EVENTO REGISTRADO")
                 eventoRepo.registrarCalificacion(eventoId, usuarioId, valor)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+                _calificacionUsuario.value = valor.toInt()
+                println("EVENTO REGISTRADO")
             } catch (e: Exception) {
                 _error.value = "Error registrando calificación: ${e.message}"
             }
         }
+    }
+
+    // (Opcional pero recomendado: una función para limpiar el estado)
+    fun limpiarCalificacionUsuario() {
+        _calificacionUsuario.value = null
     }
 
     // ------------------------------------------
@@ -681,5 +708,6 @@ class EventoViewModel(
             null
         }
     }
+
 
 }

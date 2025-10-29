@@ -20,20 +20,24 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun RatingBar(
-    initialRating: Int = 0,
+    // 1. Renombramos `initialRating` a `rating` para más claridad
+    rating: Int = 0,
     maxStars: Int = 5,
     onRatingChanged: (Int) -> Unit = {}
 ) {
-    var selectedRating by remember { mutableStateOf(initialRating.coerceIn(0, maxStars)) }
+    // 2. ELIMINAMOS el estado interno.
+    // var selectedRating by remember { mutableStateOf(initialRating.coerceIn(0, maxStars)) }
 
     Row(
         modifier = Modifier
-            .fillMaxWidth(), // 🔹 Ocupar todo el ancho disponible
-        horizontalArrangement = Arrangement.Center, // 🔹 Centrar las estrellas
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(maxStars) { index ->
-            val isSelected = index < selectedRating
+            // 3. Usamos el `rating` que nos pasa el padre
+            val isSelected = index < rating
+
             val starColor by animateColorAsState(
                 targetValue = if (isSelected) Color(0xFFFFC107) else Color.LightGray,
                 label = "starColor"
@@ -48,10 +52,10 @@ fun RatingBar(
                 contentDescription = "Estrella ${index + 1}",
                 tint = starColor,
                 modifier = Modifier
-                    .size((40.dp.value * scale).dp) // 🔹 Estrellas más grandes
+                    .size((40.dp.value * scale).dp)
                     .clickable {
-                        selectedRating = index + 1
-                        onRatingChanged(selectedRating)
+                        // 4. Solo informamos al padre que se hizo clic
+                        onRatingChanged(index + 1)
                     }
             )
         }
@@ -62,5 +66,6 @@ fun RatingBar(
 @Preview(showBackground = true)
 @Composable
 fun RatingBarPreview() {
-    RatingBar(initialRating = 3)
+    // El Preview ahora necesita que le pasemos el rating
+    RatingBar(rating = 3)
 }

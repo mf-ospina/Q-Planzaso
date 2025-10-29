@@ -37,8 +37,16 @@ class EventoRepository {
     }
 
     // 🔹 Obtener un solo evento por ID
+
+    /*
     suspend fun obtenerEvento(eventoId: String): Evento? {
         val doc = db.collection("eventos").document(eventoId).get().await()
+        return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
+    }*/
+
+    suspend fun obtenerEvento(eventoId: String): Evento? {
+        //                                  👇
+        val doc = db.collection("evento").document(eventoId).get().await() // <-- CORREGIDO
         return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
     }
 
@@ -199,7 +207,7 @@ class EventoRepository {
     // Registra o actualiza la calificación de un usuario para un evento
     suspend fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
         // Guardar la calificación en la subcolección "calificaciones" con doc = usuarioId
-        val calRef = db.collection("eventos").document(eventoId)
+        val calRef = db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
         val data = mapOf(
             "usuarioId" to usuarioId,
@@ -222,7 +230,7 @@ class EventoRepository {
 
     // Recalcula promedio de la colección "calificaciones" y actualiza el documento evento
     private suspend fun recalcularPromedioCalificaciones(eventoId: String) {
-        val snapshot = db.collection("eventos").document(eventoId)
+        val snapshot = db.collection("evento").document(eventoId)
             .collection("calificaciones").get().await()
 
         val valores = snapshot.documents.mapNotNull { it.getDouble("valor") }
@@ -230,15 +238,40 @@ class EventoRepository {
         val count = valores.size
 
         // Actualizar campos en documento evento
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .set(mapOf("calificacionPromedio" to promedio, "calificacionesCount" to count), SetOptions.merge())
             .await()
     }
-
     suspend fun actualizarCampoEvento(eventoId: String, campo: String, valor: Any) {
         db.collection("evento").document(eventoId)
             .update(campo, valor)
             .await()
     }
 
+    // En tu EventoRepository.kt
+
+    /**
+     * Obtiene la calificación específica que un usuario le dio a un evento.
+     * Devuelve el valor (ej: 5.0) o null si el usuario no ha calificado.
+     */
+    suspend fun obtenerCalificacionUsuario(eventoId: String, usuarioId: String): Double? {
+        return try {
+            // 1. Apunta al documento exacto que quieres leer
+            val docRef = db.collection("evento").document(eventoId)
+                .collection("calificaciones").document(usuarioId)
+
+            // 2. Intenta obtenerlo
+            val snapshot = docRef.get().await()
+
+            // 3. Si existe, devuelve el campo "valor". Si no, devuelve null.
+            if (snapshot.exists()) {
+                snapshot.getDouble("valor")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("Error al obtener calificación de usuario: ${e.message}")
+            null
+        }
+    }
 }

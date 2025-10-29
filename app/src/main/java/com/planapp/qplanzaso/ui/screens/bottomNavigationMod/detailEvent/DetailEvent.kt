@@ -23,11 +23,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.gson.GsonBuilder
 import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.model.Evento
@@ -44,6 +48,8 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.planapp.qplanzaso.ui.theme.DarkGrayText
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 
 // ---- Ejemplo de patrocinadores ----
 val sponsors = listOf(
@@ -55,7 +61,11 @@ val sponsors = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailEvent(navController: NavController, encodedJson: String?) {
-    val evento: Evento? = remember(encodedJson) {
+    val eventoViewModel: EventoViewModel = viewModel()
+
+    val eventoLive by eventoViewModel.eventoSeleccionado.collectAsState()
+
+    val eventoInicial: Evento? = remember(encodedJson) {
         encodedJson?.let {
             try {
                 val gson = GsonBuilder()
@@ -70,10 +80,33 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
         }
     }
 
+    val evento = eventoLive ?: eventoInicial
+
+    // Definir el usuario y su ID
+    val auth = FirebaseAuth.getInstance()
+    val currentUserId = auth.currentUser?.uid // Esto será un String?
+
     var isRegistered by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
-    var userRating by remember { mutableStateOf(0) }
+    var showRatingDialog by remember { mutableStateOf(false) }
+
+    // userRating
+    val userRating by eventoViewModel.calificacionUsuario.collectAsState()
     val context = LocalContext.current
+
+    // Observa cambios en el evento o usuario logueado y carga la calificación
+    LaunchedEffect(key1 = evento?.id, key2 = currentUserId) {
+        // Primero verificamos el usuario
+        if (currentUserId != null) {
+            evento?.id?.let { eventoIdNoNulo ->
+                eventoViewModel.cargarCalificacionUsuario(eventoIdNoNulo, currentUserId)
+            } ?: run {
+                eventoViewModel.limpiarCalificacionUsuario()
+            }
+        } else {
+            eventoViewModel.limpiarCalificacionUsuario()
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -226,11 +259,87 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Calificación
-                    Text("Calificación", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 16.dp))
-                    Spacer(modifier = Modifier.height(8.dp))
-                    RatingBar(initialRating = userRating, onRatingChanged = { userRating = it })
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "Promedio General",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = DarkGrayText
+                        )
 
+                        val promedio = evento.calificacionPromedio ?: 0.0
+                        val conteo = evento.calificacionesCount ?: 0L
+                        val promedioStr = String.format(Locale.US, "%.1f", promedio)
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Star,
+                                contentDescription = "Promedio",
+                                tint = Color(0xFFFFC107),
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                "$promedioStr ($conteo votos)",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 18.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Calificación
+                    Text("Tu Calificación", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 16.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    RatingBar(
+                        // Si userRating es 'null' (porque aún no ha votado), usa 0
+                        rating = userRating ?: 0,
+                        onRatingChanged = { newRating ->
+
+                            // 1. COMPROBACIÓN: Si ya hay una calificación, no hacemos nada.
+                            if (userRating != null) {
+                                Toast.makeText(context, "Ya has calificado este evento", Toast.LENGTH_SHORT).show()
+                                return@RatingBar // Salimos de la lambda
+                            }
+
+                            val currentUser = FirebaseAuth.getInstance().currentUser
+                            val uid = currentUser?.uid
+                            if (uid != null) {
+
+                                evento.id?.let { eventoIdNoNulo ->
+                                    val valorDouble = newRating.toDouble()
+                                    eventoViewModel.registrarCalificacion(
+                                        eventoId = eventoIdNoNulo,
+                                        usuarioId = uid,
+                                        valor = valorDouble
+                                    )
+
+                                    Toast.makeText(context, "¡Calificación registrada!", Toast.LENGTH_SHORT).show()
+
+                                    println("El UID del usuario es: $uid")
+                                    println("El evento seleccionado del usuario es: $eventoIdNoNulo")
+                                    println("Estrellas seleccionadas: $newRating")
+
+                                } ?: run {
+                                    // Esto se ejecuta si 'evento.id' SÍ era nulo
+                                    Toast.makeText(context, "⚠️ Error: El ID del evento es nulo.", Toast.LENGTH_SHORT).show()
+                                    println(" EventoId es null")
+                                }
+
+                            } else {
+                                // Esto se ejecuta si 'uid' es nulo (usuario no logueado)
+                                Toast.makeText(context, "⚠️ Error: Debes iniciar sesión para calificar.", Toast.LENGTH_SHORT).show()
+                                println("UID es null")
+                            }
+                        }
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // Botones compartir/descargar
@@ -313,4 +422,32 @@ fun downloadEventImage(context: Context, imageUrl: String?) {
         return
     }
     Toast.makeText(context, "Descargando imagen desde Firebase...", Toast.LENGTH_SHORT).show()
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun DetailEventPreview() {
+    val navController = rememberNavController()
+
+    // Evento de ejemplo para mostrar en el preview
+    val eventoDemo = Evento(
+        nombre = "Festival de Música 2025",
+        descripcion = "Un evento lleno de música, comida y diversión para toda la familia.",
+        ciudad = "Medellín",
+        direccion = "Parque Norte",
+        categoriasIds = listOf("Música", "Cultura", "Entretenimiento"),
+        imagenUrl = "https://picsum.photos/800/400",
+        fechaInicio = com.google.firebase.Timestamp.now(),
+        calificacionPromedio = 4.5,
+        calificacionesCount = 120
+    )
+
+    // Convertimos el evento a JSON codificado para pasarlo al composable
+    val gson = GsonBuilder()
+        .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
+        .create()
+    val json = gson.toJson(eventoDemo)
+    val encodedJson = java.net.URLEncoder.encode(json, StandardCharsets.UTF_8.toString())
+
+    DetailEvent(navController = navController, encodedJson = encodedJson)
 }
