@@ -71,7 +71,6 @@ fun EventSummaryScreen(
                                 nombre = formData.nombre,
                                 descripcion = formData.descripcion,
                                 categoriasIds = listOf(formData.categoriaId),
-                                vibras = formData.vibras,
                                 precio = formData.precio,
                                 fechaInicio = formData.fechaInicio,
                                 fechaFin = formData.fechaFin,

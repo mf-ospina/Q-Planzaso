@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.content.Intent
 import android.net.Uri
+import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
@@ -53,8 +54,7 @@ class EventoViewModel(
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias
 
-    private val _vibras = MutableStateFlow<List<Vibra>>(emptyList())
-    val vibras: StateFlow<List<Vibra>> = _vibras
+
 
     private val _eventoSeleccionado = MutableStateFlow<Evento?>(null)
     val eventoSeleccionado: StateFlow<Evento?> = _eventoSeleccionado
@@ -83,14 +83,13 @@ class EventoViewModel(
     val errorCategoria: StateFlow<String?> =_errorCategoria
 
     // ------------------------------------------
-    // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
+    // 🔹 Cargar datos iniciales (categorías, eventos)
     // ------------------------------------------
     fun cargarDatosIniciales() {
         viewModelScope.launch {
             try {
                 _loading.value = true
                 _categorias.value = categoriaRepo.obtenerCategoriasActivas()
-                _vibras.value = vibraRepo.obtenerVibrasActivas()
                 _eventos.value = eventoRepo.obtenerEventos()
             } catch (e: Exception) {
                 _error.value = "Error cargando datos iniciales: ${e.message}"
@@ -118,7 +117,6 @@ class EventoViewModel(
 
     fun aplicarFiltros(
         categoriasIds: List<String>? = null,
-        vibras: List<String>? = null,
         fechaInicio: Timestamp? = null,
         fechaFin: Timestamp? = null,
         precioMax: Double? = null,
@@ -130,7 +128,7 @@ class EventoViewModel(
             try {
                 _loading.value = true
                 _eventos.value = eventoRepo.filtrarEventos(
-                    categoriasIds, vibras, fechaInicio, fechaFin,
+                    categoriasIds, fechaInicio, fechaFin,
                     precioMax, ubicacionActual, maxDistanciaKm, soloVerificados
                 )
             } catch (e: Exception) {
@@ -625,6 +623,16 @@ class EventoViewModel(
         } catch (e: Exception) {
             _error.value = "Error creando evento: ${e.message}"
             null
+        }
+    }
+
+    fun inscribirseEnEvento(eventoId: String) {
+        viewModelScope.launch {
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+
+            // 🔹 Notificamos al CalendarioViewModel
+            CalendarioViewModel().emitirRefresco()
         }
     }
 

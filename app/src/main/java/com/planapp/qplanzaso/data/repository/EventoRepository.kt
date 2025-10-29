@@ -26,19 +26,19 @@ class EventoRepository {
     // 🔹 Editar evento
     suspend fun editarEvento(evento: Evento) {
         if (evento.id != null) {
-            db.collection("eventos").document(evento.id!!)
+            db.collection("evento").document(evento.id!!)
                 .set(evento, SetOptions.merge()).await()
         }
     }
 
     // 🔹 Eliminar evento
     suspend fun eliminarEvento(eventoId: String) {
-        db.collection("eventos").document(eventoId).delete().await()
+        db.collection("evento").document(eventoId).delete().await()
     }
 
     // 🔹 Obtener un solo evento por ID
     suspend fun obtenerEvento(eventoId: String): Evento? {
-        val doc = db.collection("eventos").document(eventoId).get().await()
+        val doc = db.collection("evento").document(eventoId).get().await()
         return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
     }
 
@@ -50,7 +50,7 @@ class EventoRepository {
 
     // 🔹 Buscar eventos por texto
     suspend fun buscarEventosPorTexto(texto: String): List<Evento> {
-        val snapshot = db.collection("eventos")
+        val snapshot = db.collection("evento")
             .orderBy("nombre")
             .startAt(texto)
             .endAt(texto + "\uf8ff")
@@ -61,7 +61,6 @@ class EventoRepository {
     // 🔹 Filtro avanzado por múltiples criterios
     suspend fun filtrarEventos(
         categoriasIds: List<String>? = null,
-        vibras: List<String>? = null,
         fechaInicioParam: Timestamp? = null,
         fechaFinParam: Timestamp? = null,
         precioMax: Double? = null,
@@ -69,7 +68,7 @@ class EventoRepository {
         maxDistanciaKm: Double? = null,
         soloVerificados: Boolean = false
     ): List<Evento> {
-        var ref: Query = db.collection("eventos")
+        var ref: Query = db.collection("evento")
 
         if (soloVerificados) ref = ref.whereEqualTo("verificado", true)
         if (precioMax != null) ref = ref.whereLessThanOrEqualTo("precio", precioMax)
@@ -81,13 +80,6 @@ class EventoRepository {
         if (!categoriasIds.isNullOrEmpty()) {
             eventos = eventos.filter { evento ->
                 evento.categoriasIds.any { id -> categoriasIds.contains(id) }
-            }
-        }
-
-        // 🔸 Filtrar por vibras
-        if (!vibras.isNullOrEmpty()) {
-            eventos = eventos.filter { evento ->
-                evento.vibras.any { v -> vibras.contains(v) }
             }
         }
 
@@ -120,10 +112,9 @@ class EventoRepository {
         return eventos
     }
 
-
     // 🔹 Obtener eventos creados por un organizador
     suspend fun obtenerEventosPorOrganizador(organizadorId: String): List<Evento> {
-        val snapshot = db.collection("eventos")
+        val snapshot = db.collection("evento")
             .whereEqualTo("organizadorId", organizadorId)
             .get().await()
         return snapshot.toObjects(Evento::class.java)
@@ -131,26 +122,22 @@ class EventoRepository {
 
     // 🔹 Obtener eventos relacionados (por categorías)
     suspend fun obtenerEventosRelacionados(categoriasIds: List<String>, eventoId: String): List<Evento> {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         val eventos = snapshot.toObjects(Evento::class.java)
         return eventos.filter {
             it.id != eventoId && it.categoriasIds.any { id -> categoriasIds.contains(id) }
         }
     }
 
-    // 🔹 Obtener eventos relacionados (por categorías) Funcional
+    // 🔹 Obtener eventos por categoría
     suspend fun obtenerEventosPorCategoriaN(categoryId: String): List<Evento> {
-        // 👇 AÑADE ESTAS LÍNEAS DE LOG 👇
         Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoria' = '$categoryId'")
 
         val snapshot = db.collection("evento")
             .whereEqualTo("categoria", categoryId)
-            .get()
-            .await()
+            .get().await()
 
         Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
-        // --- FIN DE LOS LOGS ---
-
         return snapshot.toObjects(Evento::class.java)
     }
 
@@ -161,40 +148,40 @@ class EventoRepository {
             "favoritosCount" to stats.favoritosCount,
             "calificacionPromedio" to stats.calificacionPromedio
         )
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .set(statsMap, SetOptions.merge()).await()
     }
 
     // 🔹 Actualizar estado de eventos (pasado/próximo)
     suspend fun actualizarEstadoEventos() {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         for (doc in snapshot.documents) {
             val evento = doc.toObject(Evento::class.java)
             val fechaFin = evento?.fechaFin
             if (fechaFin != null && fechaFin < Timestamp.now()) {
                 evento?.id?.let { id ->
-                    db.collection("eventos").document(id)
+                    db.collection("evento").document(id)
                         .update("estado", "pasado").await()
                 }
             }
         }
     }
 
-    // 🔹 Favoritos (sincronización con usuarios)
+    // 🔹 Favoritos
     suspend fun agregarFavorito(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("favoritos").document(usuarioId)
             .set(mapOf("fecha" to System.currentTimeMillis())).await()
     }
 
     suspend fun eliminarFavorito(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("favoritos").document(usuarioId).delete().await()
     }
 
-    // 🔹 Calcular distancia entre dos coordenadas
+    // 🔹 Calcular distancia entre coordenadas
     fun calcularDistanciaKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val r = 6371.0 // radio de la tierra
+        val r = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2).pow(2.0) +
@@ -204,10 +191,9 @@ class EventoRepository {
         return r * c
     }
 
-    // Registra o actualiza la calificación de un usuario para un evento
+    // 🔹 Calificaciones
     suspend fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
-        // Guardar la calificación en la subcolección "calificaciones" con doc = usuarioId
-        val calRef = db.collection("eventos").document(eventoId)
+        val calRef = db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
         val data = mapOf(
             "usuarioId" to usuarioId,
@@ -215,30 +201,23 @@ class EventoRepository {
             "fecha" to com.google.firebase.Timestamp.now()
         )
         calRef.set(data, SetOptions.merge()).await()
-
-        // Recalcular promedio
         recalcularPromedioCalificaciones(eventoId)
     }
 
-    // Eliminar calificación de usuario (si se permite)
     suspend fun eliminarCalificacion(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
             .delete().await()
         recalcularPromedioCalificaciones(eventoId)
     }
 
-    // Recalcula promedio de la colección "calificaciones" y actualiza el documento evento
     private suspend fun recalcularPromedioCalificaciones(eventoId: String) {
-        val snapshot = db.collection("eventos").document(eventoId)
+        val snapshot = db.collection("evento").document(eventoId)
             .collection("calificaciones").get().await()
-
         val valores = snapshot.documents.mapNotNull { it.getDouble("valor") }
         val promedio = if (valores.isNotEmpty()) valores.average() else 0.0
         val count = valores.size
-
-        // Actualizar campos en documento evento
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .set(mapOf("calificacionPromedio" to promedio, "calificacionesCount" to count), SetOptions.merge())
             .await()
     }
@@ -248,5 +227,4 @@ class EventoRepository {
             .update(campo, valor)
             .await()
     }
-
 }

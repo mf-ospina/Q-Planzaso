@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -22,9 +23,11 @@ import com.planapp.qplanzaso.data.repository.CategoriaRepository
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Home
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.NavItem
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Profile
+import com.planapp.qplanzaso.ui.screens.calendar.CalendarioScreen
+import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, calendarioViewModel: CalendarioViewModel) {
     val navItemList = listOf(
         NavItem(label = "Calendario", icon = Icons.Default.CalendarMonth, route = "calendar"),
         NavItem(label = "Inicio", icon = Icons.Default.Home, route = "home"),
@@ -63,7 +66,8 @@ fun HomeScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(innerPadding),
             selectedItemIndex = selectedItemIndex,
-            navController = navController
+            navController = navController,
+            calendarioViewModel = calendarioViewModel
         )
     }
 }
@@ -72,10 +76,11 @@ fun HomeScreen(navController: NavController) {
 fun ContentScreen(
     modifier: Modifier = Modifier,
     selectedItemIndex: Int,
-    navController: NavController
+    navController: NavController,
+    calendarioViewModel: CalendarioViewModel
 ) {
     when(selectedItemIndex){
-        0 -> Calendar(modifier = modifier)
+        0 -> CalendarioScreen(navController = navController, viewModel = calendarioViewModel)
         // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
         1 -> Home(modifier = modifier, navController = navController)
         2 -> Profile(modifier = modifier, navController = navController)
@@ -96,5 +101,14 @@ fun Calendar(modifier: Modifier = Modifier) {
 @Composable
 fun HomeScreenPreview() {
     val navController = rememberNavController()
-    HomeScreen(navController = navController)
+
+    // 🔹 No pasamos ViewModel real al preview
+    // Creamos una función auxiliar solo para preview
+    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("Vista previa de HomeScreen (sin ViewModel)", color = Color.Gray)
+    }
 }
+
+
+
+

@@ -14,6 +14,7 @@ import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
+import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 
 @Composable
@@ -22,6 +23,8 @@ fun AppNavigation(
     navController: NavHostController = rememberNavController()
 ) {
     val eventoViewModel: EventoViewModel = viewModel()
+    val calendarioViewModel: CalendarioViewModel = viewModel()
+
 
     NavHost(
         navController = navController,
@@ -42,7 +45,11 @@ fun AppNavigation(
         composable("RegisterScreen") { RegisterScreen(navController) }
 
         // Home
-        composable("home") { HomeScreen(navController) }
+        composable("home") {
+            HomeScreen(navController = navController, calendarioViewModel = calendarioViewModel)
+        }
+
+
 
         // Event by category (2 argumentos)
         composable(
