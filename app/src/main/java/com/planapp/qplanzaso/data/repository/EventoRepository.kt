@@ -200,6 +200,17 @@ class EventoRepository {
         return eventosFavoritos
     }
 
+    suspend fun esEventoFavorito(eventoId: String, usuarioId: String): Boolean {
+        val doc = db.collection("evento")
+            .document(eventoId)
+            .collection("favoritos")
+            .document(usuarioId)
+            .get()
+            .await()
+        return doc.exists()
+    }
+
+
 
     // 🔹 Calcular distancia entre coordenadas
     fun calcularDistanciaKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

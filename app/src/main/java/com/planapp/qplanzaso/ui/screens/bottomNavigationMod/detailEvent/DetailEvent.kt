@@ -3,6 +3,9 @@ package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -37,6 +40,7 @@ import com.planapp.qplanzaso.ui.theme.PrimaryColor
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.tooling.preview.Preview
 import com.planapp.qplanzaso.ui.components.EventoMapView
 import java.text.NumberFormat
@@ -44,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 import com.planapp.qplanzaso.utils.JsonNavHelper
+import kotlinx.coroutines.launch
 import java.net.URLDecoder
 
 
@@ -94,6 +99,10 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
     //Detectar si el usuario esta inscrito
     var isRegistered by remember { mutableStateOf(false) }
     var showDialog by remember { mutableStateOf(false) }
+
+    val contexto = LocalContext.current
+    var esFavorito by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(evento) {
         if (evento != null && usuarioId != null) {
@@ -181,14 +190,55 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                             color = DarkGrayText,
                             modifier = Modifier.weight(1f)
                         )
-                        IconButton(onClick = {}) {
+
+// ------------------- FAVORITO -------------------
+                        val scope = rememberCoroutineScope()
+
+// 🔹 LaunchedEffect para inicializar si el evento es favorito
+                        LaunchedEffect(evento, usuarioId) {
+                            if (evento != null && usuarioId != null) {
+                                esFavorito = eventoViewModel.verificarSiEsFavorito(evento.id!!, usuarioId)
+                            }
+                        }
+
+// Animación de escala (efecto “latido”)
+                        val scale by animateFloatAsState(
+                            targetValue = if (esFavorito) 1.3f else 1f,
+                            animationSpec = tween(durationMillis = 300, easing = LinearOutSlowInEasing),
+                            label = "favoriteAnimation"
+                        )
+
+                        IconButton(
+                            onClick = {
+                                if (usuarioId == null || evento?.id == null) {
+                                    Toast.makeText(contexto, "Debes iniciar sesión para marcar favoritos", Toast.LENGTH_SHORT).show()
+                                    return@IconButton
+                                }
+
+                                // Lógica de toggle usando Coroutine
+                                scope.launch {
+                                    val actualmenteFavorito = eventoViewModel.verificarSiEsFavorito(evento.id!!, usuarioId)
+                                    if (actualmenteFavorito) {
+                                        eventoViewModel.eventoRepo.eliminarFavorito(evento.id!!, usuarioId)
+                                        esFavorito = false
+                                        Toast.makeText(contexto, "Eliminado de favoritos", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        eventoViewModel.eventoRepo.agregarFavorito(evento.id!!, usuarioId)
+                                        esFavorito = true
+                                        Toast.makeText(contexto, "Agregado a favoritos", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier.scale(scale)
+                        ) {
                             Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
-                                contentDescription = null,
-                                tint = Color.LightGray,
+                                imageVector = if (esFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = if (esFavorito) "Quitar de favoritos" else "Agregar a favoritos",
+                                tint = if (esFavorito) Color.Red else Color.LightGray,
                                 modifier = Modifier.size(30.dp)
                             )
                         }
+
                     }
 
                     Spacer(modifier = Modifier.height(3.dp))

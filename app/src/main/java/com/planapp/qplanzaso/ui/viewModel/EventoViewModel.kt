@@ -37,7 +37,7 @@ import com.planapp.qplanzaso.model.EventFormData
  * - Comentarios, calificaciones y ubicación (Parte extendida)
  */
 class EventoViewModel(
-    private val eventoRepo: EventoRepository = EventoRepository(),
+    val eventoRepo: EventoRepository = EventoRepository(),
     private val categoriaRepo: CategoriaRepository = CategoriaRepository(),
     private val comentarioRepo: ComentarioRepository = ComentarioRepository(),
     private val inscripcionRepo: InscripcionRepository = InscripcionRepository(),
@@ -292,6 +292,77 @@ class EventoViewModel(
                 _error.value = "Error cargando favoritos: ${e.message}"
             } finally {
                 _loading.value = false
+            }
+        }
+    }
+
+    suspend fun verificarSiEsFavorito(eventoId: String, usuarioId: String): Boolean {
+        return try {
+            eventoRepo.esEventoFavorito(eventoId, usuarioId)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
+    // ------------------------------------------
+    // 🔹 Control avanzado de Favoritos
+    // ------------------------------------------
+
+    /**
+     * Alterna el estado de favorito de un evento para el usuario actual.
+     * Si ya es favorito, lo elimina; si no, lo agrega.
+     */
+    fun toggleFavorito(evento: Evento, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventoId = evento.id ?: return@launch // 🔹 Evita null
+                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
+                if (esFavorito) {
+                    eventoRepo.eliminarFavorito(eventoId, usuarioId)
+                    _eventosFavoritos.value = _eventosFavoritos.value.filter { it.id != eventoId }
+                } else {
+                    eventoRepo.agregarFavorito(eventoId, usuarioId)
+                    _eventosFavoritos.value = _eventosFavoritos.value + evento
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al alternar favorito: ${e.message}"
+            }
+        }
+    }
+
+
+    /**
+     * Verifica en tiempo real si un evento está marcado como favorito
+     * y actualiza el campo en el objeto seleccionado.
+     */
+    fun actualizarEstadoFavoritoSeleccionado(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventoActual = _eventoSeleccionado.value ?: return@launch
+                val eventoId = eventoActual.id ?: return@launch // 🔹 Evita null
+                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
+                _eventoSeleccionado.value = eventoActual.copy(esFavorito = esFavorito)
+            } catch (e: Exception) {
+                _error.value = "Error verificando estado favorito: ${e.message}"
+            }
+        }
+    }
+
+
+    /**
+     * Recarga la lista de favoritos del usuario y sincroniza con la lista global de eventos.
+     */
+    fun refrescarFavoritos(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
+                val favoritosIds = _eventosFavoritos.value.map { it.id }.toSet()
+                _eventos.value = _eventos.value.map { evento ->
+                    evento.copy(esFavorito = favoritosIds.contains(evento.id))
+                }
+            } catch (e: Exception) {
+                _error.value = "Error refrescando favoritos: ${e.message}"
             }
         }
     }
