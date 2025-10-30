@@ -1,5 +1,5 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
-
+import com.planapp.qplanzaso.ui.components.CommentModal
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -93,6 +93,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
     // userRating
     val userRating by eventoViewModel.calificacionUsuario.collectAsState()
     val context = LocalContext.current
+    var showCommentModal by remember { mutableStateOf(false) }
 
     // Observa cambios en el evento o usuario logueado y carga la calificación
     LaunchedEffect(key1 = evento?.id, key2 = currentUserId) {
@@ -352,6 +353,13 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                         IconActionButton(icon = Icons.Default.Share) { shareEvent(context, evento) }
                         Spacer(modifier = Modifier.width(24.dp))
                         IconActionButton(icon = Icons.Default.Download) { downloadEventImage(context, evento.imagenUrl) }
+
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        // --- Botón de Comentario ---
+                        IconActionButton(icon = Icons.Default.Comment) {
+                            showCommentModal = true // <-- ESTO ABRE EL MODAL
+                        }
                     }
                 }
 
@@ -371,6 +379,20 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
             ) {
                 Text("Error: No se pudo cargar la información del evento.")
             }
+        }
+
+        if (showCommentModal) {
+            CommentModal(
+                showDialog = true, // Le decimos que se muestre
+                onDismissRequest = {
+                    showCommentModal = false // Acción para cerrar el modal
+                },
+                onAddComment = { comentario ->
+                    // No hacemos nada por ahora
+                    println("Comentario recibido: $comentario") // Solo para probar
+                    showCommentModal = false // Cerramos el modal
+                }
+            )
         }
     }
 }

@@ -13,7 +13,7 @@ class ComentarioRepository {
 
     // 🔹 Crear comentario (genera id automático y agrega timestamp actual)
     suspend fun crearComentario(eventoId: String, comentario: ComentarioEvento): String {
-        val colRef = db.collection("eventos").document(eventoId).collection("comentarios")
+        val colRef = db.collection("evento").document(eventoId).collection("comentarios")
         val docRef = colRef.document()
         val id = comentario.id.ifEmpty { docRef.id }
         val toSave = comentario.copy(id = id, fecha = Timestamp.now())
