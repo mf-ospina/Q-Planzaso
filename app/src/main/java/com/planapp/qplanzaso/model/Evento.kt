@@ -41,8 +41,5 @@ data class Evento(
     var pais: String? = null,
 
     // 🔹 Inscripciones
-    var inscritosIds: List<String> = emptyList(),
-
-    // 🔹 Patrocinadores
-    var patrocinadores: List<String> = emptyList()
+    var inscritosIds: List<String> = emptyList()
 )
