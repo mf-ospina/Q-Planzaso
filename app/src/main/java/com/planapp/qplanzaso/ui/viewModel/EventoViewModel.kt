@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
@@ -54,6 +55,9 @@ class EventoViewModel(
 
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias
+
+
+
     private val _eventoSeleccionado = MutableStateFlow<Evento?>(null)
     val eventoSeleccionado: StateFlow<Evento?> = _eventoSeleccionado
 
@@ -98,7 +102,7 @@ class EventoViewModel(
 
 
     // ------------------------------------------
-    // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
+    // 🔹 Cargar datos iniciales (categorías, eventos)
     // ------------------------------------------
     fun cargarDatosIniciales() {
         viewModelScope.launch {
@@ -684,6 +688,16 @@ class EventoViewModel(
         } catch (e: Exception) {
             _error.value = "Error creando evento: ${e.message}"
             null
+        }
+    }
+
+    fun inscribirseEnEvento(eventoId: String) {
+        viewModelScope.launch {
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+
+            // 🔹 Notificamos al CalendarioViewModel
+            CalendarioViewModel().emitirRefresco()
         }
     }
 

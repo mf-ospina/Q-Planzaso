@@ -44,11 +44,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+
+        // 🔹 Habilita el uso de java.time.* en minSdk < 26
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -57,6 +60,8 @@ android {
 }
 
 dependencies {
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -99,4 +104,10 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("io.coil-kt:coil-compose:2.4.0") // depencia oara subir imagenes
+
+    // Calendar compose (kizitonwose)
+    implementation("com.kizitonwose.calendar:compose:2.6.0")
+    // Gson para serializar Evento al navegar
+    implementation("com.google.code.gson:gson:2.10.1")
+    
 }
