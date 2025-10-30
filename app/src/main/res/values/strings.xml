@@ -106,4 +106,53 @@
     <string name="forgot_success">Se envió un correo para restablecer tu contraseña.</string>
     <string name="forgot_error">Error: %1$s</string>
     <string name="forgot_invalid_email">Ingresa un correo válido.</string>
+
+
+    <!-- CommentItem -->
+    <string name="comment_edit_description">Editar comentario</string>
+    <string name="comment_delete_description">Eliminar comentario</string>
+    <string name="comment_default_username">Usuario</string>
+    <string name="comment_invalid_date">Fecha inválida</string>
+    <string name="comment_now">Justo ahora</string>
+
+    <!-- Diálogo de eliminación -->
+    <string name="comment_delete_title">Eliminar comentario</string>
+    <string name="comment_delete_message">¿Estás seguro de que quieres eliminar tu comentario?</string>
+    <string name="comment_delete_confirm">Eliminar</string>
+    <string name="comment_delete_cancel">Cancelar</string>
+
+
+    <!-- CommentModal -->
+    <string name="comment_add_title">Añade tu opinión</string>
+    <string name="comment_edit_title">Editar opinión</string>
+    <string name="comment_leave_label">Deja un comentario:</string>
+    <string name="comment_placeholder">Escribe tu comentario...</string>
+    <string name="comment_rate_label">Califica el evento (opcional):</string>
+    <string name="comment_publish">Publicar</string>
+    <string name="comment_cancel">Cancelar</string>
+
+
+    <!-- CommentSection -->
+    <string name="comments_title">Comentarios</string>
+    <string name="comments_empty_message">No hay comentarios aún. ¡Sé el primero en opinar!</string>
+    <string name="comments_load_more">Cargar más comentarios</string>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </resources>

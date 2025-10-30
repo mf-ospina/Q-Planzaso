@@ -338,10 +338,10 @@ class EventoViewModel(
     fun agregarComentario(eventoId: String, comentario: ComentarioEvento, usuarioId: String) {
         viewModelScope.launch {
             try {
-                _loading.value = true
                 comentarioRepo.crearComentario(eventoId, comentario.copy(usuarioId = usuarioId))
                 if (comentario.calificacion > 0.0) {
                     eventoRepo.registrarCalificacion(eventoId, usuarioId, comentario.calificacion)
+                    _calificacionUsuario.value = comentario.calificacion.toInt()
                 }
                 cargarComentarios(eventoId)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
@@ -401,7 +401,7 @@ class EventoViewModel(
         }
     }
 
-    // (Opcional pero recomendado: una función para limpiar el estado)
+    // una función para limpiar el estado)
     fun limpiarCalificacionUsuario() {
         _calificacionUsuario.value = null
     }

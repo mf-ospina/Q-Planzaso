@@ -16,10 +16,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.firebase.Timestamp
+import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.model.ComentarioEvento
+import androidx.compose.runtime.LaunchedEffect
 
 /**
  * Un modal (AlertDialog) para escribir un comentario y dar una calificación.
@@ -28,32 +31,48 @@ import com.planapp.qplanzaso.model.ComentarioEvento
 fun CommentModal(
     showDialog: Boolean,
     onDismissRequest: () -> Unit,
-    // Devuelve un objeto ComentarioEvento listo para el ViewModel
-    onAddComment: (comentario: ComentarioEvento) -> Unit
+    onAddComment: (comentario: ComentarioEvento) -> Unit,
+    initialComentario: ComentarioEvento? = null
 ) {
-    // Estado interno para el texto y las estrellas del modal
     var commentText by remember { mutableStateOf("") }
     var userRating by remember { mutableStateOf(0) }
+
+    LaunchedEffect(key1 = showDialog) {
+        if (showDialog && initialComentario != null) {
+            commentText = initialComentario.texto
+            userRating = initialComentario.calificacion.toInt()
+        } else if (!showDialog) {
+            commentText = ""
+            userRating = 0
+        }
+    }
 
     if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
+            title = {
+                Text(
+                    if (initialComentario != null)
+                        stringResource(R.string.comment_edit_title)
+                    else
+                        stringResource(R.string.comment_add_title)
+                )
+            },
 
-            // Título del Modal
-            title = { Text("Añade tu opinión") },
-
-            // Contenido (TextField y RatingBar)
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Deja un comentario:",
+                        stringResource(R.string.comment_leave_label),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
+
                     OutlinedTextField(
                         value = commentText,
                         onValueChange = { commentText = it },
-                        placeholder = { Text("Escribe tu comentario...") },
+                        placeholder = {
+                            Text(stringResource(R.string.comment_placeholder))
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(100.dp)
@@ -62,11 +81,11 @@ fun CommentModal(
                     Spacer(Modifier.height(8.dp))
 
                     Text(
-                        "Califica el evento (opcional):",
+                        stringResource(R.string.comment_rate_label),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    // Usamos el RatingBar Componente
+
                     RatingBar(
                         rating = userRating,
                         onRatingChanged = { userRating = it }
@@ -74,7 +93,6 @@ fun CommentModal(
                 }
             },
 
-            // Botón de Confirmar
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -83,7 +101,6 @@ fun CommentModal(
                             calificacion = userRating.toDouble(),
                             fecha = Timestamp.now()
                         )
-
                         onAddComment(newComment)
                         commentText = ""
                         userRating = 0
@@ -91,14 +108,13 @@ fun CommentModal(
                     },
                     enabled = commentText.isNotBlank()
                 ) {
-                    Text("Publicar")
+                    Text(stringResource(R.string.comment_publish))
                 }
             },
 
-            // Botón de Cancelar
             dismissButton = {
                 TextButton(onClick = onDismissRequest) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.comment_cancel))
                 }
             }
         )

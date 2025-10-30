@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 import com.planapp.qplanzaso.ui.components.CommentModal
+import androidx.compose.ui.platform.LocalInspectionMode
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -49,7 +50,10 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.planapp.qplanzaso.ui.theme.DarkGrayText
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.planapp.qplanzaso.model.ComentarioEvento
+import com.planapp.qplanzaso.ui.components.CommentSection
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
+
 
 // ---- Ejemplo de patrocinadores ----
 val sponsors = listOf(
@@ -94,6 +98,8 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
     val userRating by eventoViewModel.calificacionUsuario.collectAsState()
     val context = LocalContext.current
     var showCommentModal by remember { mutableStateOf(false) }
+
+    var comentarioAEditar by remember { mutableStateOf<ComentarioEvento?>(null) }
 
     // Observa cambios en el evento o usuario logueado y carga la calificación
     LaunchedEffect(key1 = evento?.id, key2 = currentUserId) {
@@ -300,14 +306,12 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                     Text("Tu Calificación", fontWeight = FontWeight.Bold, fontSize = 20.sp, modifier = Modifier.padding(start = 16.dp))
                     Spacer(modifier = Modifier.height(8.dp))
                     RatingBar(
-                        // Si userRating es 'null' (porque aún no ha votado), usa 0
                         rating = userRating ?: 0,
                         onRatingChanged = { newRating ->
 
-                            // 1. COMPROBACIÓN: Si ya hay una calificación, no hacemos nada.
                             if (userRating != null) {
                                 Toast.makeText(context, "Ya has calificado este evento", Toast.LENGTH_SHORT).show()
-                                return@RatingBar // Salimos de la lambda
+                                return@RatingBar
                             }
 
                             val currentUser = FirebaseAuth.getInstance().currentUser
@@ -339,10 +343,28 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
                                 Toast.makeText(context, "⚠️ Error: Debes iniciar sesión para calificar.", Toast.LENGTH_SHORT).show()
                                 println("UID es null")
                             }
-                        }
+                        },
+                        isReadOnly = false,
+                        starSize = 36.dp,
+                        starColor = Color(0xFFFFC107) // El color dorado
                     )
                     Spacer(modifier = Modifier.height(24.dp))
+                    Divider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp))
+                    val isPreview = LocalInspectionMode.current
 
+                    // Solo mostramos la sección de comentarios si NO estamos en un Preview
+                    if (!isPreview) {
+                        evento.id?.let { idNoNulo ->
+                            CommentSection(
+                                eventoId = idNoNulo,
+                                viewModel = eventoViewModel,
+                                onStartEdit = { comentarioParaEditar ->
+                                    comentarioAEditar = comentarioParaEditar
+                                    showCommentModal = true
+                                }
+                            )
+                        }
+                    }
                     // Botones compartir/descargar
                     Row(
                         modifier = Modifier
@@ -358,7 +380,8 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
 
                         // --- Botón de Comentario ---
                         IconActionButton(icon = Icons.Default.Comment) {
-                            showCommentModal = true // <-- ESTO ABRE EL MODAL
+                            comentarioAEditar = null //
+                            showCommentModal = true
                         }
                     }
                 }
@@ -381,16 +404,50 @@ fun DetailEvent(navController: NavController, encodedJson: String?) {
             }
         }
 
+
         if (showCommentModal) {
             CommentModal(
-                showDialog = true, // Le decimos que se muestre
+                showDialog = true,
                 onDismissRequest = {
-                    showCommentModal = false // Acción para cerrar el modal
+                    showCommentModal = false
+                    comentarioAEditar = null
                 },
-                onAddComment = { comentario ->
-                    // No hacemos nada por ahora
-                    println("Comentario recibido: $comentario") // Solo para probar
-                    showCommentModal = false // Cerramos el modal
+                initialComentario = comentarioAEditar,
+                onAddComment = { comentarioDelModal ->
+
+                    val uid = currentUserId
+                    val eventoId = evento?.id
+                    val userName = auth.currentUser?.displayName ?: "Usuario" // <-- Nombre no llega
+
+                    if (uid == null || eventoId == null) {
+                        Toast.makeText(context, "Error: No se pudo publicar", Toast.LENGTH_SHORT).show()
+                        return@CommentModal // Salimos si no hay IDs
+                    }
+
+                    if (comentarioAEditar == null) {
+                        eventoViewModel.agregarComentario(
+                            eventoId = eventoId,
+                            comentario = comentarioDelModal.copy(nombre = userName),
+                            usuarioId = uid
+                        )
+                        Toast.makeText(context, "Comentario publicado", Toast.LENGTH_SHORT).show()
+
+                    } else {
+                        val comentarioActualizado = comentarioAEditar!!.copy(
+                            texto = comentarioDelModal.texto,
+                            calificacion = comentarioDelModal.calificacion
+                        )
+                        eventoViewModel.editarComentario(
+                            eventoId = eventoId,
+                            comentario = comentarioActualizado,
+                            usuarioId = uid
+                        )
+                        Toast.makeText(context, "Comentario actualizado", Toast.LENGTH_SHORT).show()
+                    }
+
+                    // Cierra y resetea
+                    showCommentModal = false
+                    comentarioAEditar = null
                 }
             )
         }
