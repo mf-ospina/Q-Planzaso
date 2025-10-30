@@ -75,6 +75,25 @@ class EventoViewModel(
 
     private var lastCommentCursor: Timestamp? = null // para paginación
 
+    private val _calificacionUsuario = MutableStateFlow<Int?>(null)
+    val calificacionUsuario: StateFlow<Int?> = _calificacionUsuario
+
+    /**
+     * Carga la calificación que el usuario actual le dio al evento.
+     */
+    fun cargarCalificacionUsuario(eventoId: String, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                // Llama al nuevo método del repositorio
+                val ratingDouble = eventoRepo.obtenerCalificacionUsuario(eventoId, usuarioId)
+
+                // Actualiza el StateFlow (convierte a Int o lo deja en null)
+                _calificacionUsuario.value = ratingDouble?.toInt()
+            } catch (e: Exception) {
+                _error.value = "Error al cargar la calificación del usuario: ${e.message}"
+            }
+        }
+    }
     // ------------------------------------------
     // 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
     // ------------------------------------------
@@ -416,10 +435,10 @@ class EventoViewModel(
     fun agregarComentario(eventoId: String, comentario: ComentarioEvento, usuarioId: String) {
         viewModelScope.launch {
             try {
-                _loading.value = true
                 comentarioRepo.crearComentario(eventoId, comentario.copy(usuarioId = usuarioId))
                 if (comentario.calificacion > 0.0) {
                     eventoRepo.registrarCalificacion(eventoId, usuarioId, comentario.calificacion)
+                    _calificacionUsuario.value = comentario.calificacion.toInt()
                 }
                 cargarComentarios(eventoId)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
@@ -468,12 +487,20 @@ class EventoViewModel(
     fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
         viewModelScope.launch {
             try {
+                println("EVENTO REGISTRADO")
                 eventoRepo.registrarCalificacion(eventoId, usuarioId, valor)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+                _calificacionUsuario.value = valor.toInt()
+                println("EVENTO REGISTRADO")
             } catch (e: Exception) {
                 _error.value = "Error registrando calificación: ${e.message}"
             }
         }
+    }
+
+    // una función para limpiar el estado)
+    fun limpiarCalificacionUsuario() {
+        _calificacionUsuario.value = null
     }
 
     // ------------------------------------------
@@ -779,14 +806,19 @@ class EventoViewModel(
         }
     }
 
-    fun inscribirseEnEvento(eventoId: String) {
+    fun inscribirseEnEvento(eventoId: String, usuarioId: String) {
         viewModelScope.launch {
-            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
-            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
-
-            // 🔹 Notificamos al CalendarioViewModel
-            CalendarioViewModel().emitirRefresco()
+            try {
+                _loading.value = true
+                inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+            } catch (e: Exception) {
+                _error.value = "Error al inscribirse: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
         }
     }
+
 
 }

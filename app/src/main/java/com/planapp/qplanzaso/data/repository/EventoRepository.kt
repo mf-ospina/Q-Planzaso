@@ -37,8 +37,16 @@ class EventoRepository {
     }
 
     // 🔹 Obtener un solo evento por ID
+
+    /*
     suspend fun obtenerEvento(eventoId: String): Evento? {
         val doc = db.collection("evento").document(eventoId).get().await()
+        return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
+    }*/
+
+    suspend fun obtenerEvento(eventoId: String): Evento? {
+        //                                  👇
+        val doc = db.collection("evento").document(eventoId).get().await() // <-- CORREGIDO
         return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
     }
 
@@ -226,6 +234,7 @@ class EventoRepository {
 
     // 🔹 Calificaciones
     suspend fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
+        // Guardar la calificación en la subcolección "calificaciones" con doc = usuarioId
         val calRef = db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
         val data = mapOf(
@@ -234,6 +243,8 @@ class EventoRepository {
             "fecha" to com.google.firebase.Timestamp.now()
         )
         calRef.set(data, SetOptions.merge()).await()
+
+        // Recalcular promedio
         recalcularPromedioCalificaciones(eventoId)
     }
 
@@ -247,14 +258,16 @@ class EventoRepository {
     private suspend fun recalcularPromedioCalificaciones(eventoId: String) {
         val snapshot = db.collection("evento").document(eventoId)
             .collection("calificaciones").get().await()
+
         val valores = snapshot.documents.mapNotNull { it.getDouble("valor") }
         val promedio = if (valores.isNotEmpty()) valores.average() else 0.0
         val count = valores.size
+
+        // Actualizar campos en documento evento
         db.collection("evento").document(eventoId)
             .set(mapOf("calificacionPromedio" to promedio, "calificacionesCount" to count), SetOptions.merge())
             .await()
     }
-
     suspend fun actualizarCampoEvento(eventoId: String, campo: String, valor: Any) {
         db.collection("evento").document(eventoId)
             .update(campo, valor)
