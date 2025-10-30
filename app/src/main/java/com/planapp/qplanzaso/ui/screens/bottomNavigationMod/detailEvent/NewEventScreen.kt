@@ -774,4 +774,3 @@ fun SponsorTag(name: String, onRemove: () -> Unit) {
         }
     }
 }
-

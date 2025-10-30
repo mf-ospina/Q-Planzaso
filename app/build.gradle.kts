@@ -109,5 +109,5 @@ dependencies {
     implementation("com.kizitonwose.calendar:compose:2.6.0")
     // Gson para serializar Evento al navegar
     implementation("com.google.code.gson:gson:2.10.1")
-    
+
 }
