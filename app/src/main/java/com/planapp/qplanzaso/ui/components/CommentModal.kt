@@ -18,8 +18,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.google.firebase.Timestamp // 👈 Importa Timestamp
-import com.planapp.qplanzaso.model.ComentarioEvento // 👈 Importa tu modelo
+import com.google.firebase.Timestamp
+import com.planapp.qplanzaso.model.ComentarioEvento
 
 /**
  * Un modal (AlertDialog) para escribir un comentario y dar una calificación.
@@ -66,7 +66,7 @@ fun CommentModal(
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    // Usamos el RatingBar que ya tienes
+                    // Usamos el RatingBar Componente
                     RatingBar(
                         rating = userRating,
                         onRatingChanged = { userRating = it }
@@ -78,24 +78,17 @@ fun CommentModal(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        // 1. Creamos el objeto ComentarioEvento
                         val newComment = ComentarioEvento(
-                            // Asumimos que tu modelo tiene estos campos
                             texto = commentText.trim(),
                             calificacion = userRating.toDouble(),
                             fecha = Timestamp.now()
-                            // El 'usuarioId' lo añade tu ViewModel con .copy()
                         )
 
-                        // 2. Enviamos el comentario hacia arriba
                         onAddComment(newComment)
-
-                        // 3. Limpiamos y cerramos el modal
                         commentText = ""
                         userRating = 0
                         onDismissRequest()
                     },
-                    // Solo se puede enviar si el comentario no está vacío
                     enabled = commentText.isNotBlank()
                 ) {
                     Text("Publicar")
@@ -111,15 +104,3 @@ fun CommentModal(
         )
     }
 }
-
-/* NOTA: Asumí que tu modelo ComentarioEvento se ve así.
-¡Asegúrate de que coincida con tu definición real en 'model/ComentarioEvento.kt'!
-
-data class ComentarioEvento(
-    val id: String? = null,
-    val usuarioId: String? = null,
-    val texto: String? = null,
-    val calificacion: Double = 0.0,
-    val fecha: Timestamp? = null
-)
-*/
