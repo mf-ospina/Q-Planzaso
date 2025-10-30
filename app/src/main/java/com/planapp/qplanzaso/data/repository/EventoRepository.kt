@@ -179,6 +179,28 @@ class EventoRepository {
             .collection("favoritos").document(usuarioId).delete().await()
     }
 
+    suspend fun obtenerEventosFavoritosPorUsuario(usuarioId: String): List<Evento> {
+        val eventosSnapshot = db.collection("evento").get().await()
+        val eventosFavoritos = mutableListOf<Evento>()
+
+        for (eventoDoc in eventosSnapshot.documents) {
+            val favoritoDoc = eventoDoc.reference
+                .collection("favoritos")
+                .document(usuarioId)
+                .get()
+                .await()
+
+            if (favoritoDoc.exists()) {
+                eventoDoc.toObject(Evento::class.java)?.let { evento ->
+                    eventosFavoritos.add(evento.copy(id = eventoDoc.id))
+                }
+            }
+        }
+
+        return eventosFavoritos
+    }
+
+
     // 🔹 Calcular distancia entre coordenadas
     fun calcularDistanciaKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371.0

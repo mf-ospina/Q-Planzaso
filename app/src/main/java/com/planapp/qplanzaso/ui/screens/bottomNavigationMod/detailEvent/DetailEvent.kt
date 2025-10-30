@@ -37,17 +37,38 @@ import com.planapp.qplanzaso.ui.theme.PrimaryColor
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.tooling.preview.Preview
 import com.planapp.qplanzaso.ui.components.EventoMapView
 import java.text.NumberFormat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
+import com.planapp.qplanzaso.utils.JsonNavHelper
+import java.net.URLDecoder
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewModel: EventoViewModel = viewModel() ) {
     val evento: Evento? = remember(encodedJson) {
+        encodedJson?.let {
+            try {
+                val gson = GsonBuilder()
+                    .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
+                    .create()
+
+                // 🔹 Reemplaza solo los + por espacios sin decodificar toda la URL
+                val fixedJson = it.replace("+", " ")
+                gson.fromJson(fixedJson, Evento::class.java)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+    }
+
+    /*val evento: Evento? = remember(encodedJson) {
         encodedJson?.let {
             try {
                 val gson = GsonBuilder()
@@ -61,7 +82,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                 null
             }
         }
-    }
+    }*/
 
 
     val context = LocalContext.current

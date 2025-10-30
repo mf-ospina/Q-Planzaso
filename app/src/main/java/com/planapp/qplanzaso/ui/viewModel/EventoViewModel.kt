@@ -56,6 +56,9 @@ class EventoViewModel(
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias
 
+    //Favoritos
+    private val _eventosFavoritos = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosFavoritos: StateFlow<List<Evento>> = _eventosFavoritos
 
 
     private val _eventoSeleccionado = MutableStateFlow<Evento?>(null)
@@ -73,8 +76,8 @@ class EventoViewModel(
     private var lastCommentCursor: Timestamp? = null // para paginación
 
     // ------------------------------------------
-// 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
-// ------------------------------------------
+    // 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
+    // ------------------------------------------
     private val _eventosPorCategoria = MutableStateFlow<List<Evento>>(emptyList())
     val eventosPorCategoria: StateFlow<List<Evento>> = _eventosPorCategoria
 
@@ -279,6 +282,20 @@ class EventoViewModel(
             }
         }
     }
+
+    fun cargarEventosFavoritos(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
+            } catch (e: Exception) {
+                _error.value = "Error cargando favoritos: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
 
     // ------------------------------------------
     // 🔹 Estadísticas
