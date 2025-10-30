@@ -5,7 +5,7 @@ import com.google.firebase.firestore.GeoPoint
 
 /**
  * Representa un evento dentro de la aplicación.
- * Modelo compatible con Firestore y el módulo de calendario.
+ * Compatible con las funcionalidades de búsqueda, filtros y gestión del organizador.
  */
 data class Evento(
     var id: String? = null,
@@ -18,28 +18,25 @@ data class Evento(
     var patrocinadores: List<String> = emptyList(),
     var fechaInicio: Timestamp? = null,
     var fechaFin: Timestamp? = null,
-
-    // 🔹 Organización
     var organizadorId: String = "",
-    var verificado: Boolean? = false,
+    var verificado: Boolean = false,
     var estado: String = "proximo",
+    var calificacionPromedio: Double = 0.0,
+    var calificacionesCount: Int = 0,
+    var asistentesCount: Int = 0,
+    var favoritosCount: Int = 0,
+    var imagen: String = "",
 
-    // 🔹 Calificaciones / métricas
-    var calificacionPromedio: Double? = 0.0,
-    var calificacionesCount: Int? = 0,
-    var asistentesCount: Int? = 0,
-    var favoritosCount: Int? = 0,
-
-    // 🔹 Imágenes
-    var imagen: String? = null,
-    var imagenUrl: String? = null,
-
-    // 🔹 Ubicación
-    var ubicacion: GeoPoint? = null,
-    var direccion: String? = null,
+    // 🔹 ubicación:
+    var ubicacion: GeoPoint? = null, // coordenadas (lat, lon)
+    var direccion: String? = null, // texto legible como parque simon bolivar
     var ciudad: String? = null,
     var pais: String? = null,
 
-    // 🔹 Inscripciones
-    var inscritosIds: List<String> = emptyList()
+    //Inscripcion
+    val inscritosIds: List<String> = emptyList(), // lista de usuarios inscritos
+
+    //Storage
+    val imagenUrl: String? = null
+
 )
