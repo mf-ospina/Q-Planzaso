@@ -93,7 +93,7 @@
     <string name="login_forgot_password">Olvidé mi clave</string>
     <string name="login_acceder">Acceder</string>
     <string name="login_loading">Cargando...</string>
-    <string name="login_success">Inicio de sesión exitoso </string>
+    <string name="login_invalid_text">Correo o contraseña incorrectos </string>
     <string name="login_invalid">Credenciales inválidas </string>
     <string name="login_empty_fields">Completa todos los campos</string>
 

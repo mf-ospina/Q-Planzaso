@@ -12,9 +12,10 @@ data class Evento(
     var nombre: String = "",
     var descripcion: String = "",
     var categoriasIds: List<String> = emptyList(),
-    var precio: Double? = 0.0,
-
-    // 🔹 Fechas
+    var vibras: List<String> = emptyList(),
+    var precio: Double = 0.0,
+    // 🔹 Patrocinadores
+    var patrocinadores: List<String> = emptyList(),
     var fechaInicio: Timestamp? = null,
     var fechaFin: Timestamp? = null,
 

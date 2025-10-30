@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,7 @@ fun EventCard(evento: Evento, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
+            .background(Color.White)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp)

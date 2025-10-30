@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,10 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +44,9 @@ fun LoginScreen(navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
     var dialogMessage by remember { mutableStateOf("") }
     var dialogTitle by remember { mutableStateOf("") }
+
+    //Para el teclado
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
@@ -92,6 +99,10 @@ fun LoginScreen(navController: NavController) {
                         onValueChange = { username = it },
                         singleLine = true,
                         textStyle = TextStyle(color = Color(0xFF333333), fontSize = 16.sp),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
+                        ),
                         decorationBox = { innerTextField ->
                             Column {
                                 innerTextField()
@@ -123,6 +134,32 @@ fun LoginScreen(navController: NavController) {
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         textStyle = TextStyle(color = Color(0xFF333333), fontSize = 16.sp),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                // 🔹 Al presionar “Enter” se intenta iniciar sesión
+                                if (username.isNotEmpty() && password.isNotEmpty()) {
+                                    loading = true
+                                    auth.signInWithEmailAndPassword(username, password)
+                                        .addOnCompleteListener { task ->
+                                            loading = false
+                                            if (task.isSuccessful) {
+                                                navController.navigate("home") {
+                                                    popUpTo("login") { inclusive = true }
+                                                }
+                                            } else {
+                                                dialogTitle = context.getString(R.string.login_invalid)
+                                                dialogMessage = context.getString(R.string.login_invalid_text)
+                                                showDialog = true
+                                            }
+                                        }
+                                } else {
+                                    dialogTitle = context.getString(R.string.login_empty_fields)
+                                    dialogMessage = context.getString(R.string.login_empty_fields)
+                                    showDialog = true
+                                }
+                            }
+                        ),
                         decorationBox = { innerTextField ->
                             Column {
                                 innerTextField()
@@ -162,12 +199,12 @@ fun LoginScreen(navController: NavController) {
                                 .addOnCompleteListener { task ->
                                     loading = false
                                     if (task.isSuccessful) {
-                                        dialogTitle = context.getString(R.string.login_success)
-                                        dialogMessage = context.getString(R.string.login_success)
-                                        showDialog = true
+                                        navController.navigate("home") {
+                                            popUpTo("login") { inclusive = true }
+                                        }
                                     } else {
                                         dialogTitle = context.getString(R.string.login_invalid)
-                                        dialogMessage = context.getString(R.string.login_invalid)
+                                        dialogMessage = context.getString(R.string.login_invalid_text)
                                         showDialog = true
                                     }
                                 }
@@ -198,22 +235,16 @@ fun LoginScreen(navController: NavController) {
             }
         }
 
-        // Modal de éxito / error
+        // Modal de error
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text(dialogTitle, fontWeight = FontWeight.Bold) },
-                text = { Text(dialogMessage) },
+                title = { Text(dialogTitle, fontWeight = FontWeight.Bold, color = Color.Black) },
+                text = { Text(dialogMessage, color = Color.Gray) },
+                containerColor = Color.White,
                 confirmButton = {
-                    TextButton(onClick = {
-                        showDialog = false
-                        if (dialogTitle == context.getString(R.string.login_success)) {
-                            navController.navigate("home") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        }
-                    }) {
-                        Text("OK", color = DarkButton)
+                    TextButton(onClick = { showDialog = false }) {
+                        Text(stringResource(R.string.close_button), color = DarkButton)
                     }
                 }
             )

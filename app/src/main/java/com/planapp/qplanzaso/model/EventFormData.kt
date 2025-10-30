@@ -16,10 +16,11 @@ import kotlinx.parcelize.RawValue
 data class EventFormData(
     val nombre: String = "",
     val descripcion: String = "",
-    val categoriaId: String = "",
-    val categoriaNombre: String = "",
+    val categoriaId: @RawValue List<String> = emptyList(),
+    val categoriaNombre: @RawValue List<String> = emptyList(),
     val vibras: @RawValue List<String> = emptyList(),
     val precio: Double = 0.0,
+    val patrocinadores: @RawValue List<String> = emptyList(),
     val fechaInicio: Timestamp = Timestamp.now(),
     val fechaFin: Timestamp = Timestamp.now(),
     val organizadorId: String = "",

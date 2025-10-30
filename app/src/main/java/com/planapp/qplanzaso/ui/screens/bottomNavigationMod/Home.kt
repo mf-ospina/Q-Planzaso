@@ -35,6 +35,7 @@ import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 import com.planapp.qplanzaso.ui.components.EventCard
 import com.google.firebase.Timestamp
 import com.google.gson.GsonBuilder
+import com.planapp.qplanzaso.ui.components.QTopBar
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.TimestampTypeAdapter
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -120,16 +121,9 @@ fun Home(
                     .fillMaxSize()
                     .background(Color.White)
             ) {
-                Text(
-                    text = stringResource(R.string.app_name),
-                    fontSize = 36.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
-                )
+                QTopBar(navController = navController, title = "Planzaso", showBackButton = false)
+                Spacer(modifier = Modifier.height(4.dp))
+
                 // SearchBar
                 OutlinedTextField(
                     value = searchQuery,
