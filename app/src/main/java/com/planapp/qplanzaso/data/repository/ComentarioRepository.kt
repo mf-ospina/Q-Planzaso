@@ -11,7 +11,7 @@ class ComentarioRepository {
 
     private val db = FirebaseFirestore.getInstance()
 
-    // 🔹 Crear comentario (genera id automático y agrega timestamp actual)
+    // Crear comentario
     suspend fun crearComentario(eventoId: String, comentario: ComentarioEvento): String {
         val colRef = db.collection("evento").document(eventoId).collection("comentarios")
         val docRef = colRef.document()
@@ -22,7 +22,7 @@ class ComentarioRepository {
         return id
     }
 
-    // 🔹 Obtener todos los comentarios de un evento (ordenados por fecha desc)
+    // Obtener todos los comentarios
     suspend fun obtenerComentarios(eventoId: String): List<ComentarioEvento> {
         val snapshot = db.collection("evento")
             .document(eventoId)
@@ -38,7 +38,7 @@ class ComentarioRepository {
         }
     }
 
-    // 🔹 Obtener comentarios paginados (para mejorar rendimiento con muchos comentarios)
+    // Obtener comentarios paginados
     suspend fun obtenerComentariosPaginados(
         eventoId: String,
         lastVisibleFecha: Timestamp? = null,
@@ -58,18 +58,17 @@ class ComentarioRepository {
         val comentarios = snapshot.toObjects(ComentarioEvento::class.java)
 
         val nextCursor = if (comentarios.isNotEmpty()) comentarios.last().fecha else null
-
         return Pair(comentarios, nextCursor)
     }
 
-    // 🔹 Editar comentario (solo texto y calificación)
+    // Editar comentario
     suspend fun editarComentario(eventoId: String, comentario: ComentarioEvento) {
         if (comentario.id.isBlank()) throw IllegalArgumentException("Comentario debe tener ID para editar")
 
         val map = mapOf(
             "texto" to comentario.texto,
             "calificacion" to comentario.calificacion,
-            "fecha" to Timestamp.now() // actualiza fecha de edición
+            "fecha" to Timestamp.now()
         )
 
         db.collection("evento").document(eventoId)
@@ -78,7 +77,7 @@ class ComentarioRepository {
             .await()
     }
 
-    // 🔹 Eliminar comentario por ID
+    // Eliminar comentario
     suspend fun eliminarComentario(eventoId: String, comentarioId: String) {
         db.collection("evento").document(eventoId)
             .collection("comentarios").document(comentarioId)

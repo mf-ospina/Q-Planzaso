@@ -24,18 +24,18 @@ class AsistenciaRepository {
             data["longitud"] = lon
         }
 
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("asistencias").document(usuarioId)
             .set(data, SetOptions.merge()).await()
 
         // Actualiza contador en el documento del evento
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .update("asistentesCount", FieldValue.increment(1)).await()
     }
 
     // Verificar si un usuario ya asistió
     suspend fun verificarAsistencia(eventoId: String, usuarioId: String): Boolean {
-        val doc = db.collection("eventos").document(eventoId)
+        val doc = db.collection("evento").document(eventoId)
             .collection("asistencias").document(usuarioId)
             .get().await()
         return doc.exists()
@@ -43,7 +43,7 @@ class AsistenciaRepository {
 
     // Obtener todos los asistentes
     suspend fun obtenerAsistentes(eventoId: String): List<String> {
-        val snapshot = db.collection("eventos").document(eventoId)
+        val snapshot = db.collection("evento").document(eventoId)
             .collection("asistencias").get().await()
         return snapshot.documents.mapNotNull { it.getString("usuarioId") }
     }

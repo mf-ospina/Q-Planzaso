@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
@@ -36,7 +37,7 @@ import com.planapp.qplanzaso.model.EventFormData
  * - Comentarios, calificaciones y ubicación (Parte extendida)
  */
 class EventoViewModel(
-    private val eventoRepo: EventoRepository = EventoRepository(),
+    val eventoRepo: EventoRepository = EventoRepository(),
     private val categoriaRepo: CategoriaRepository = CategoriaRepository(),
     private val comentarioRepo: ComentarioRepository = ComentarioRepository(),
     private val inscripcionRepo: InscripcionRepository = InscripcionRepository(),
@@ -54,6 +55,12 @@ class EventoViewModel(
 
     private val _categorias = MutableStateFlow<List<Categoria>>(emptyList())
     val categorias: StateFlow<List<Categoria>> = _categorias
+
+    //Favoritos
+    private val _eventosFavoritos = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosFavoritos: StateFlow<List<Evento>> = _eventosFavoritos
+
+
     private val _eventoSeleccionado = MutableStateFlow<Evento?>(null)
     val eventoSeleccionado: StateFlow<Evento?> = _eventoSeleccionado
 
@@ -88,8 +95,8 @@ class EventoViewModel(
         }
     }
     // ------------------------------------------
-// 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
-// ------------------------------------------
+    // 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
+    // ------------------------------------------
     private val _eventosPorCategoria = MutableStateFlow<List<Evento>>(emptyList())
     val eventosPorCategoria: StateFlow<List<Evento>> = _eventosPorCategoria
 
@@ -117,7 +124,7 @@ class EventoViewModel(
 
 
     // ------------------------------------------
-    // 🔹 Cargar datos iniciales (categorías, vibras, eventos)
+    // 🔹 Cargar datos iniciales (categorías, eventos)
     // ------------------------------------------
     fun cargarDatosIniciales() {
         viewModelScope.launch {
@@ -202,6 +209,10 @@ class EventoViewModel(
     // ---------- FUNCIONES DE FORMULARIO ----------
 
     /** Guarda los datos del formulario en un objeto EventFormData */
+    // Funiones para mantener los datos en el formualrio de crear evento
+    // ---------- FUNCIONES DE FORMULARIO ----------
+
+    /** Guarda los datos del formulario en un objeto EventFormData */
     fun toFormData(organizadorId: String): EventFormData? {
         val geoPoint = ubicacionLatLng?.let { GeoPoint(it.latitude, it.longitude) }
         if (nombre.isBlank() || descripcion.isBlank() || categoriasSeleccionadas.isEmpty() ||
@@ -233,6 +244,7 @@ class EventoViewModel(
         fechaInicio = null
         fechaFin = null
         precio = ""
+        patrocinadores = emptyList()
         direccion = ""
         imagenUri = null
         ubicacionLatLng = null
@@ -289,6 +301,91 @@ class EventoViewModel(
             }
         }
     }
+
+    fun cargarEventosFavoritos(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
+            } catch (e: Exception) {
+                _error.value = "Error cargando favoritos: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    suspend fun verificarSiEsFavorito(eventoId: String, usuarioId: String): Boolean {
+        return try {
+            eventoRepo.esEventoFavorito(eventoId, usuarioId)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
+    // ------------------------------------------
+    // 🔹 Control avanzado de Favoritos
+    // ------------------------------------------
+
+    /**
+     * Alterna el estado de favorito de un evento para el usuario actual.
+     * Si ya es favorito, lo elimina; si no, lo agrega.
+     */
+    fun toggleFavorito(evento: Evento, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventoId = evento.id ?: return@launch // 🔹 Evita null
+                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
+                if (esFavorito) {
+                    eventoRepo.eliminarFavorito(eventoId, usuarioId)
+                    _eventosFavoritos.value = _eventosFavoritos.value.filter { it.id != eventoId }
+                } else {
+                    eventoRepo.agregarFavorito(eventoId, usuarioId)
+                    _eventosFavoritos.value = _eventosFavoritos.value + evento
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al alternar favorito: ${e.message}"
+            }
+        }
+    }
+
+
+    /**
+     * Verifica en tiempo real si un evento está marcado como favorito
+     * y actualiza el campo en el objeto seleccionado.
+     */
+    fun actualizarEstadoFavoritoSeleccionado(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventoActual = _eventoSeleccionado.value ?: return@launch
+                val eventoId = eventoActual.id ?: return@launch // 🔹 Evita null
+                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
+                _eventoSeleccionado.value = eventoActual.copy(esFavorito = esFavorito)
+            } catch (e: Exception) {
+                _error.value = "Error verificando estado favorito: ${e.message}"
+            }
+        }
+    }
+
+
+    /**
+     * Recarga la lista de favoritos del usuario y sincroniza con la lista global de eventos.
+     */
+    fun refrescarFavoritos(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
+                val favoritosIds = _eventosFavoritos.value.map { it.id }.toSet()
+                _eventos.value = _eventos.value.map { evento ->
+                    evento.copy(esFavorito = favoritosIds.contains(evento.id))
+                }
+            } catch (e: Exception) {
+                _error.value = "Error refrescando favoritos: ${e.message}"
+            }
+        }
+    }
+
 
     // ------------------------------------------
     // 🔹 Estadísticas
@@ -706,6 +803,20 @@ class EventoViewModel(
         } catch (e: Exception) {
             _error.value = "Error creando evento: ${e.message}"
             null
+        }
+    }
+
+    fun inscribirseEnEvento(eventoId: String, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+                inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+            } catch (e: Exception) {
+                _error.value = "Error al inscribirse: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
         }
     }
 

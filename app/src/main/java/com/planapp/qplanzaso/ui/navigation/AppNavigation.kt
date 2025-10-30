@@ -9,11 +9,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
 import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.favorites.FavoritosScreen
+import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 
 @Composable
@@ -22,6 +25,8 @@ fun AppNavigation(
     navController: NavHostController = rememberNavController()
 ) {
     val eventoViewModel: EventoViewModel = viewModel()
+    val calendarioViewModel: CalendarioViewModel = viewModel()
+
 
     NavHost(
         navController = navController,
@@ -42,7 +47,11 @@ fun AppNavigation(
         composable("RegisterScreen") { RegisterScreen(navController) }
 
         // Home
-        composable("home") { HomeScreen(navController) }
+        composable("home") {
+            HomeScreen(navController = navController, calendarioViewModel = calendarioViewModel)
+        }
+
+
 
         // Event by category (2 argumentos)
         composable(
@@ -91,6 +100,12 @@ fun AppNavigation(
         composable("selector_ubicacion") {
             SelectorUbicacionMapa(navController)
         }
+
+        composable("favoritos") {
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            FavoritosScreen(viewModel = eventoViewModel, usuarioId = usuarioId)
+        }
+
 
     }
 }

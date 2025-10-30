@@ -26,21 +26,21 @@ class EventoRepository {
     // 🔹 Editar evento
     suspend fun editarEvento(evento: Evento) {
         if (evento.id != null) {
-            db.collection("eventos").document(evento.id!!)
+            db.collection("evento").document(evento.id!!)
                 .set(evento, SetOptions.merge()).await()
         }
     }
 
     // 🔹 Eliminar evento
     suspend fun eliminarEvento(eventoId: String) {
-        db.collection("eventos").document(eventoId).delete().await()
+        db.collection("evento").document(eventoId).delete().await()
     }
 
     // 🔹 Obtener un solo evento por ID
 
     /*
     suspend fun obtenerEvento(eventoId: String): Evento? {
-        val doc = db.collection("eventos").document(eventoId).get().await()
+        val doc = db.collection("evento").document(eventoId).get().await()
         return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
     }*/
 
@@ -58,7 +58,7 @@ class EventoRepository {
 
     // 🔹 Buscar eventos por texto
     suspend fun buscarEventosPorTexto(texto: String): List<Evento> {
-        val snapshot = db.collection("eventos")
+        val snapshot = db.collection("evento")
             .orderBy("nombre")
             .startAt(texto)
             .endAt(texto + "\uf8ff")
@@ -76,7 +76,7 @@ class EventoRepository {
         maxDistanciaKm: Double? = null,
         soloVerificados: Boolean = false
     ): List<Evento> {
-        var ref: Query = db.collection("eventos")
+        var ref: Query = db.collection("evento")
 
         if (soloVerificados) ref = ref.whereEqualTo("verificado", true)
         if (precioMax != null) ref = ref.whereLessThanOrEqualTo("precio", precioMax)
@@ -120,10 +120,9 @@ class EventoRepository {
         return eventos
     }
 
-
     // 🔹 Obtener eventos creados por un organizador
     suspend fun obtenerEventosPorOrganizador(organizadorId: String): List<Evento> {
-        val snapshot = db.collection("eventos")
+        val snapshot = db.collection("evento")
             .whereEqualTo("organizadorId", organizadorId)
             .get().await()
         return snapshot.toObjects(Evento::class.java)
@@ -131,26 +130,22 @@ class EventoRepository {
 
     // 🔹 Obtener eventos relacionados (por categorías)
     suspend fun obtenerEventosRelacionados(categoriasIds: List<String>, eventoId: String): List<Evento> {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         val eventos = snapshot.toObjects(Evento::class.java)
         return eventos.filter {
             it.id != eventoId && it.categoriasIds.any { id -> categoriasIds.contains(id) }
         }
     }
 
-    // 🔹 Obtener eventos relacionados (por categorías) Funcional
+    // 🔹 Obtener eventos por categoría
     suspend fun obtenerEventosPorCategoriaN(categoryId: String): List<Evento> {
-        // 👇 AÑADE ESTAS LÍNEAS DE LOG 👇
         Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoria' = '$categoryId'")
 
         val snapshot = db.collection("evento")
             .whereEqualTo("categoria", categoryId)
-            .get()
-            .await()
+            .get().await()
 
         Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
-        // --- FIN DE LOS LOGS ---
-
         return snapshot.toObjects(Evento::class.java)
     }
 
@@ -161,40 +156,73 @@ class EventoRepository {
             "favoritosCount" to stats.favoritosCount,
             "calificacionPromedio" to stats.calificacionPromedio
         )
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .set(statsMap, SetOptions.merge()).await()
     }
 
     // 🔹 Actualizar estado de eventos (pasado/próximo)
     suspend fun actualizarEstadoEventos() {
-        val snapshot = db.collection("eventos").get().await()
+        val snapshot = db.collection("evento").get().await()
         for (doc in snapshot.documents) {
             val evento = doc.toObject(Evento::class.java)
             val fechaFin = evento?.fechaFin
             if (fechaFin != null && fechaFin < Timestamp.now()) {
                 evento?.id?.let { id ->
-                    db.collection("eventos").document(id)
+                    db.collection("evento").document(id)
                         .update("estado", "pasado").await()
                 }
             }
         }
     }
 
-    // 🔹 Favoritos (sincronización con usuarios)
+    // 🔹 Favoritos
     suspend fun agregarFavorito(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("favoritos").document(usuarioId)
             .set(mapOf("fecha" to System.currentTimeMillis())).await()
     }
 
     suspend fun eliminarFavorito(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("favoritos").document(usuarioId).delete().await()
     }
 
-    // 🔹 Calcular distancia entre dos coordenadas
+    suspend fun obtenerEventosFavoritosPorUsuario(usuarioId: String): List<Evento> {
+        val eventosSnapshot = db.collection("evento").get().await()
+        val eventosFavoritos = mutableListOf<Evento>()
+
+        for (eventoDoc in eventosSnapshot.documents) {
+            val favoritoDoc = eventoDoc.reference
+                .collection("favoritos")
+                .document(usuarioId)
+                .get()
+                .await()
+
+            if (favoritoDoc.exists()) {
+                eventoDoc.toObject(Evento::class.java)?.let { evento ->
+                    eventosFavoritos.add(evento.copy(id = eventoDoc.id))
+                }
+            }
+        }
+
+        return eventosFavoritos
+    }
+
+    suspend fun esEventoFavorito(eventoId: String, usuarioId: String): Boolean {
+        val doc = db.collection("evento")
+            .document(eventoId)
+            .collection("favoritos")
+            .document(usuarioId)
+            .get()
+            .await()
+        return doc.exists()
+    }
+
+
+
+    // 🔹 Calcular distancia entre coordenadas
     fun calcularDistanciaKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val r = 6371.0 // radio de la tierra
+        val r = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2).pow(2.0) +
@@ -204,7 +232,7 @@ class EventoRepository {
         return r * c
     }
 
-    // Registra o actualiza la calificación de un usuario para un evento
+    // 🔹 Calificaciones
     suspend fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
         // Guardar la calificación en la subcolección "calificaciones" con doc = usuarioId
         val calRef = db.collection("evento").document(eventoId)
@@ -220,15 +248,13 @@ class EventoRepository {
         recalcularPromedioCalificaciones(eventoId)
     }
 
-    // Eliminar calificación de usuario (si se permite)
     suspend fun eliminarCalificacion(eventoId: String, usuarioId: String) {
-        db.collection("eventos").document(eventoId)
+        db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
             .delete().await()
         recalcularPromedioCalificaciones(eventoId)
     }
 
-    // Recalcula promedio de la colección "calificaciones" y actualiza el documento evento
     private suspend fun recalcularPromedioCalificaciones(eventoId: String) {
         val snapshot = db.collection("evento").document(eventoId)
             .collection("calificaciones").get().await()
@@ -246,32 +272,5 @@ class EventoRepository {
         db.collection("evento").document(eventoId)
             .update(campo, valor)
             .await()
-    }
-
-    // En tu EventoRepository.kt
-
-    /**
-     * Obtiene la calificación específica que un usuario le dio a un evento.
-     * Devuelve el valor (ej: 5.0) o null si el usuario no ha calificado.
-     */
-    suspend fun obtenerCalificacionUsuario(eventoId: String, usuarioId: String): Double? {
-        return try {
-            // 1. Apunta al documento exacto que quieres leer
-            val docRef = db.collection("evento").document(eventoId)
-                .collection("calificaciones").document(usuarioId)
-
-            // 2. Intenta obtenerlo
-            val snapshot = docRef.get().await()
-
-            // 3. Si existe, devuelve el campo "valor". Si no, devuelve null.
-            if (snapshot.exists()) {
-                snapshot.getDouble("valor")
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            println("Error al obtener calificación de usuario: ${e.message}")
-            null
-        }
     }
 }
