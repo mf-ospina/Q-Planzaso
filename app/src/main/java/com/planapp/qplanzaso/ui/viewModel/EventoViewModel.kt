@@ -302,10 +302,6 @@ class EventoViewModel(
         return eventoRepo.obtenerEventoPorId(eventoId)
     }
 
-    suspend fun actualizarEvento(eventoId: String, evento: Evento) {
-        eventoRepo.actualizarEvento(eventoId, evento)
-    }
-
 
     fun editarEvento(evento: Evento) {
         viewModelScope.launch {
