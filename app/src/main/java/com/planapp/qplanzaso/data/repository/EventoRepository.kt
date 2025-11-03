@@ -273,4 +273,25 @@ class EventoRepository {
             .update(campo, valor)
             .await()
     }
+
+    suspend fun obtenerCalificacionUsuario(eventoId: String, usuarioId: String): Double? {
+        return try {
+            // 1. Apunta al documento exacto que quieres leer
+            val docRef = db.collection("evento").document(eventoId)
+                .collection("calificaciones").document(usuarioId)
+
+            // 2. Intenta obtenerlo
+            val snapshot = docRef.get().await()
+
+            // 3. Si existe, devuelve el campo "valor". Si no, devuelve null.
+            if (snapshot.exists()) {
+                snapshot.getDouble("valor")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("Error al obtener calificación de usuario: ${e.message}")
+            null
+        }
+    }
 }

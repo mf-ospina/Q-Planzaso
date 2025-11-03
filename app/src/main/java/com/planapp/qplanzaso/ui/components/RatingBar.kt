@@ -16,32 +16,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp // <-- Importante
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun RatingBar(
-    rating: Int = 0,
+    initialRating: Int = 0,
     maxStars: Int = 5,
-    onRatingChanged: (Int) -> Unit = {},
-    // --- NUEVOS PARÁMETROS ---
-    modifier: Modifier = Modifier,
-    starSize: Dp = 40.dp,
-    starColor: Color = Color(0xFFFFC107),
-    unselectedColor: Color = Color.LightGray,
-    isReadOnly: Boolean = false     // Para deshabilitar el clic
+    onRatingChanged: (Int) -> Unit = {}
 ) {
+    var selectedRating by remember { mutableStateOf(initialRating.coerceIn(0, maxStars)) }
+
     Row(
-        // Usamos el modifier que nos pasan
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxWidth(), // 🔹 Ocupar todo el ancho disponible
+        horizontalArrangement = Arrangement.Center, // 🔹 Centrar las estrellas
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(maxStars) { index ->
-            val isSelected = index < rating
-
-            val starColorAnim by animateColorAsState(
-                targetValue = if (isSelected) starColor else unselectedColor,
+            val isSelected = index < selectedRating
+            val starColor by animateColorAsState(
+                targetValue = if (isSelected) Color(0xFFFFC107) else Color.LightGray,
                 label = "starColor"
             )
             val scale by animateFloatAsState(
@@ -52,21 +46,21 @@ fun RatingBar(
             Icon(
                 imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
                 contentDescription = "Estrella ${index + 1}",
-                tint = starColorAnim,
+                tint = starColor,
                 modifier = Modifier
-                    .size((starSize.value * scale).dp)
-                    .clickable(
-                        enabled = !isReadOnly
-                    ) {
-                        onRatingChanged(index + 1)
+                    .size((40.dp.value * scale).dp) // 🔹 Estrellas más grandes
+                    .clickable {
+                        selectedRating = index + 1
+                        onRatingChanged(selectedRating)
                     }
             )
         }
     }
 }
 
-@Preview(showBackground = true, name = "RatingBar Grande (Default)")
+
+@Preview(showBackground = true)
 @Composable
 fun RatingBarPreview() {
-    RatingBar(rating = 3)
+    RatingBar(initialRating = 3)
 }

@@ -86,10 +86,14 @@ fun CommentModal(
                         fontWeight = FontWeight.SemiBold
                     )
 
+                    /*
                     RatingBar(
+
                         rating = userRating,
                         onRatingChanged = { userRating = it }
                     )
+
+                     */
                 }
             },
 

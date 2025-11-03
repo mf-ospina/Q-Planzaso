@@ -36,13 +36,15 @@ fun FavoriteButton(evento: Evento?, eventoViewModel: EventoViewModel) {
     LaunchedEffect(evento?.id, usuarioId) {
         if (evento != null && usuarioId != null) {
             try {
-                eventoViewModel.actualizarEstadoFavoritoSeleccionado(usuarioId)
-                esFavorito = eventoViewModel.eventoSeleccionado.value?.esFavorito ?: false
+                // verificarSiEsFavorito es suspend, y LaunchedEffect permite llamadas suspend
+                val fav = eventoViewModel.verificarSiEsFavorito(evento.id!!, usuarioId)
+                esFavorito = fav
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
     }
+
 
     // --- Botón interactivo ---
     IconButton(

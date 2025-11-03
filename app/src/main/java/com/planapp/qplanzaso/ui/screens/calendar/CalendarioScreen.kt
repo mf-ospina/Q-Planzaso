@@ -32,6 +32,7 @@ import java.util.*
 
 
 import com.google.firebase.Timestamp
+import com.planapp.qplanzaso.ui.components.QTopBar
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.TimestampTypeAdapter
 
 
@@ -216,6 +217,9 @@ fun CalendarioScreen(
                     }
                 )
             }
+
+            QTopBar(navController, title = "Calendario")
+            Spacer(modifier = Modifier.height(12.dp))
 
             CalendarHeader(
                 currentMonth = calendarState.firstVisibleMonth.yearMonth,

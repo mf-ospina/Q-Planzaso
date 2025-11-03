@@ -78,7 +78,7 @@ fun CommentItem(
             Spacer(modifier = Modifier.height(12.dp))
             if (comentario.calificacion > 0) {
                 RatingBar(
-                    rating = comentario.calificacion.toInt(),
+                    //rating = comentario.calificacion.toInt(),
                     onRatingChanged = {}
                 )
                 Spacer(modifier = Modifier.height(8.dp))

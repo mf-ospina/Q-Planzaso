@@ -29,6 +29,8 @@ import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
 import com.planapp.qplanzaso.model.EventFormData
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * ViewModel principal para manejar toda la lógica de los eventos:
@@ -75,25 +77,6 @@ class EventoViewModel(
 
     private var lastCommentCursor: Timestamp? = null // para paginación
 
-    private val _calificacionUsuario = MutableStateFlow<Int?>(null)
-    val calificacionUsuario: StateFlow<Int?> = _calificacionUsuario
-
-    /**
-     * Carga la calificación que el usuario actual le dio al evento.
-     */
-    fun cargarCalificacionUsuario(eventoId: String, usuarioId: String) {
-        viewModelScope.launch {
-            try {
-                // Llama al nuevo método del repositorio
-                val ratingDouble = eventoRepo.obtenerCalificacionUsuario(eventoId, usuarioId)
-
-                // Actualiza el StateFlow (convierte a Int o lo deja en null)
-                _calificacionUsuario.value = ratingDouble?.toInt()
-            } catch (e: Exception) {
-                _error.value = "Error al cargar la calificación del usuario: ${e.message}"
-            }
-        }
-    }
     // ------------------------------------------
     // 🔹 Filtrado por categoría (para pantalla de registro o descubrimiento)
     // ------------------------------------------
@@ -279,104 +262,88 @@ class EventoViewModel(
         }
     }
 
-    // ------------------------------------------
-    // 🔹 Favoritos
-    // ------------------------------------------
-    fun agregarAFavoritos(eventoId: String, usuarioId: String) {
-        viewModelScope.launch {
-            try {
-                eventoRepo.agregarFavorito(eventoId, usuarioId)
-            } catch (e: Exception) {
-                _error.value = "Error agregando a favoritos: ${e.message}"
-            }
-        }
-    }
 
-    fun eliminarDeFavoritos(eventoId: String, usuarioId: String) {
-        viewModelScope.launch {
-            try {
-                eventoRepo.eliminarFavorito(eventoId, usuarioId)
-            } catch (e: Exception) {
-                _error.value = "Error eliminando de favoritos: ${e.message}"
-            }
-        }
-    }
+// ------------------------------------------
+// 🔹 Favoritos (optimizado + sincronización global)
+// ------------------------------------------
 
-    fun cargarEventosFavoritos(usuarioId: String) {
-        viewModelScope.launch {
-            try {
-                _loading.value = true
-                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
-            } catch (e: Exception) {
-                _error.value = "Error cargando favoritos: ${e.message}"
-            } finally {
-                _loading.value = false
-            }
-        }
-    }
-
-    suspend fun verificarSiEsFavorito(eventoId: String, usuarioId: String): Boolean {
-        return try {
-            eventoRepo.esEventoFavorito(eventoId, usuarioId)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-
-    // ------------------------------------------
-    // 🔹 Control avanzado de Favoritos
-    // ------------------------------------------
+    private val _favoritosSync = MutableSharedFlow<Unit>(replay = 0)
+    val favoritosSync = _favoritosSync.asSharedFlow()
 
     /**
-     * Alterna el estado de favorito de un evento para el usuario actual.
-     * Si ya es favorito, lo elimina; si no, lo agrega.
+     * Alterna el estado de favorito de un evento.
+     * Aplica los cambios al instante en la UI y ejecuta la operación en Firestore en segundo plano.
      */
     fun toggleFavorito(evento: Evento, usuarioId: String) {
         viewModelScope.launch {
             try {
-                val eventoId = evento.id ?: return@launch // 🔹 Evita null
-                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
+                val eventoId = evento.id ?: return@launch
+                val favoritosActuales = _eventosFavoritos.value.toMutableList()
+                val esFavorito = favoritosActuales.any { it.id == eventoId }
+
                 if (esFavorito) {
-                    eventoRepo.eliminarFavorito(eventoId, usuarioId)
-                    _eventosFavoritos.value = _eventosFavoritos.value.filter { it.id != eventoId }
+                    // 🔹 1. Actualiza instantáneamente la lista local
+                    _eventosFavoritos.value = favoritosActuales.filter { it.id != eventoId }
+
+                    // 🔹 2. Lanza la eliminación real sin bloquear la UI
+                    launch(Dispatchers.IO) {
+                        try {
+                            eventoRepo.eliminarFavorito(eventoId, usuarioId)
+                        } catch (e: Exception) {
+                            _error.value = "Error eliminando favorito: ${e.message}"
+                        }
+                    }
                 } else {
-                    eventoRepo.agregarFavorito(eventoId, usuarioId)
-                    _eventosFavoritos.value = _eventosFavoritos.value + evento
+                    // 🔹 1. Añade instantáneamente en la UI
+                    _eventosFavoritos.value = favoritosActuales + evento
+
+                    // 🔹 2. Luego lo guarda en Firestore sin bloquear la UI
+                    launch(Dispatchers.IO) {
+                        try {
+                            eventoRepo.agregarFavorito(eventoId, usuarioId)
+                        } catch (e: Exception) {
+                            _error.value = "Error agregando favorito: ${e.message}"
+                        }
+                    }
                 }
+
+                // 🔹 3. Sincroniza el campo esFavorito en la lista global (si aplica)
+                val favoritosIds = _eventosFavoritos.value.mapNotNull { it.id }.toSet()
+                _eventos.value = _eventos.value.map { ev ->
+                    ev.copy(esFavorito = favoritosIds.contains(ev.id))
+                }
+
+                // 🔹 4. Notifica a todas las pantallas que los favoritos cambiaron
+                _favoritosSync.emit(Unit)
+
             } catch (e: Exception) {
-                _error.value = "Error al alternar favorito: ${e.message}"
+                _error.value = "Error general al alternar favorito: ${e.message}"
             }
         }
     }
 
-
     /**
-     * Verifica en tiempo real si un evento está marcado como favorito
-     * y actualiza el campo en el objeto seleccionado.
+     * Verifica rápidamente si un evento es favorito.
+     * Usa la caché local primero, y Firestore solo si es necesario.
      */
-    fun actualizarEstadoFavoritoSeleccionado(usuarioId: String) {
-        viewModelScope.launch {
-            try {
-                val eventoActual = _eventoSeleccionado.value ?: return@launch
-                val eventoId = eventoActual.id ?: return@launch // 🔹 Evita null
-                val esFavorito = eventoRepo.esEventoFavorito(eventoId, usuarioId)
-                _eventoSeleccionado.value = eventoActual.copy(esFavorito = esFavorito)
-            } catch (e: Exception) {
-                _error.value = "Error verificando estado favorito: ${e.message}"
-            }
+    suspend fun verificarSiEsFavorito(eventoId: String, usuarioId: String): Boolean {
+        val favoritosLocales = _eventosFavoritos.value
+        if (favoritosLocales.isNotEmpty()) {
+            return favoritosLocales.any { it.id == eventoId }
         }
+        return eventoRepo.esEventoFavorito(eventoId, usuarioId)
     }
 
-
     /**
-     * Recarga la lista de favoritos del usuario y sincroniza con la lista global de eventos.
+     * Recarga la lista completa de favoritos desde Firestore y sincroniza con la lista global.
      */
     fun refrescarFavoritos(usuarioId: String) {
         viewModelScope.launch {
             try {
-                _eventosFavoritos.value = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
-                val favoritosIds = _eventosFavoritos.value.map { it.id }.toSet()
+                val nuevosFavoritos = eventoRepo.obtenerEventosFavoritosPorUsuario(usuarioId)
+                _eventosFavoritos.value = nuevosFavoritos
+
+                val favoritosIds = nuevosFavoritos.mapNotNull { it.id }.toSet()
                 _eventos.value = _eventos.value.map { evento ->
                     evento.copy(esFavorito = favoritosIds.contains(evento.id))
                 }
@@ -385,6 +352,7 @@ class EventoViewModel(
             }
         }
     }
+
 
 
     // ------------------------------------------
@@ -435,10 +403,10 @@ class EventoViewModel(
     fun agregarComentario(eventoId: String, comentario: ComentarioEvento, usuarioId: String) {
         viewModelScope.launch {
             try {
+                _loading.value = true
                 comentarioRepo.crearComentario(eventoId, comentario.copy(usuarioId = usuarioId))
                 if (comentario.calificacion > 0.0) {
                     eventoRepo.registrarCalificacion(eventoId, usuarioId, comentario.calificacion)
-                    _calificacionUsuario.value = comentario.calificacion.toInt()
                 }
                 cargarComentarios(eventoId)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
@@ -487,20 +455,12 @@ class EventoViewModel(
     fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
         viewModelScope.launch {
             try {
-                println("EVENTO REGISTRADO")
                 eventoRepo.registrarCalificacion(eventoId, usuarioId, valor)
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
-                _calificacionUsuario.value = valor.toInt()
-                println("EVENTO REGISTRADO")
             } catch (e: Exception) {
                 _error.value = "Error registrando calificación: ${e.message}"
             }
         }
-    }
-
-    // una función para limpiar el estado)
-    fun limpiarCalificacionUsuario() {
-        _calificacionUsuario.value = null
     }
 
     // ------------------------------------------
@@ -806,19 +766,14 @@ class EventoViewModel(
         }
     }
 
-    fun inscribirseEnEvento(eventoId: String, usuarioId: String) {
+    fun inscribirseEnEvento(eventoId: String) {
         viewModelScope.launch {
-            try {
-                _loading.value = true
-                inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
-                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
-            } catch (e: Exception) {
-                _error.value = "Error al inscribirse: ${e.message}"
-            } finally {
-                _loading.value = false
-            }
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+
+            // 🔹 Notificamos al CalendarioViewModel
+            CalendarioViewModel().emitirRefresco()
         }
     }
-
 
 }

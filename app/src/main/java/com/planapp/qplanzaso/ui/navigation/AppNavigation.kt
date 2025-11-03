@@ -103,7 +103,7 @@ fun AppNavigation(
 
         composable("favoritos") {
             val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-            FavoritosScreen(viewModel = eventoViewModel, usuarioId = usuarioId)
+            FavoritosScreen(navController = navController, viewModel = eventoViewModel, usuarioId = usuarioId)
         }
 
 
