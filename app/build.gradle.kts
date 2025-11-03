@@ -62,6 +62,7 @@ android {
 dependencies {
 
     implementation(libs.androidx.animation.core)
+    implementation(libs.ui)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 
     implementation(libs.androidx.core.ktx)
@@ -93,7 +94,7 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-location:21.0.1") //localización
     implementation("androidx.compose.material3:material3:1.1.0")
-    implementation("androidx.navigation:navigation-compose:2.6.0")
+    //implementation("androidx.navigation:navigation-compose:2.6.0")
     implementation("androidx.activity:activity-compose:1.7.2")
 
     implementation("com.google.maps.android:maps-compose:4.3.3")
@@ -104,11 +105,13 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("com.google.code.gson:gson:2.10.1")
 
-    implementation("io.coil-kt:coil-compose:2.4.0") // depencia oara subir imagenes
+    implementation("io.coil-kt:coil-compose:2.4.0") // depencia para subir imagenes
 
     // Calendar compose (kizitonwose)
     implementation("com.kizitonwose.calendar:compose:2.6.0")
     // Gson para serializar Evento al navegar
     implementation("com.google.code.gson:gson:2.10.1")
+    //WorkManager componente oficial de Android para ejecutar tareas en segundo plano
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
 
 }

@@ -84,4 +84,15 @@ class InscripcionRepository {
             throw Exception("Error al obtener eventos inscritos: ${e.localizedMessage}", e)
         }
     }
+
+    suspend fun obtenerUsuariosInscritos(eventoId: String): List<String> {
+        val snapshot = db.collection("evento")
+            .document(eventoId)
+            .collection("inscritos")
+            .get()
+            .await()
+
+        return snapshot.documents.mapNotNull { it.id }
+    }
+
 }

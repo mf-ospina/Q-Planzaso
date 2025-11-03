@@ -76,8 +76,9 @@ fun Profile(
             onCrearEvento = { navController.navigate("NewEventScreen") },
             onCerrarSesion = {
                 usuarioViewModel.cerrarSesion()
+                Toast.makeText(navController.context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
                 navController.navigate("login") {
-                    popUpTo(0) { inclusive = true } // Limpia el backstack
+                    popUpTo(0) { inclusive = true } // Limpia todo el backstack
                 }
             },
             navController = navController,
