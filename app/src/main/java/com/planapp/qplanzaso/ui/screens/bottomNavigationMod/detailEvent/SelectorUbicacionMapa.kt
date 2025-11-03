@@ -5,12 +5,14 @@ import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -19,6 +21,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import com.planapp.qplanzaso.ui.theme.BackgroundColor
+import com.planapp.qplanzaso.ui.theme.DarkButton
+import com.planapp.qplanzaso.ui.theme.PrimaryColor
+import com.planapp.qplanzaso.ui.theme.boxBackground
 import java.util.*
 
 @SuppressLint("MissingPermission")
@@ -38,6 +44,7 @@ fun SelectorUbicacionMapa(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
+            .padding(WindowInsets.systemBars.asPaddingValues())
     ) {
 
         // 🏠 Campo de texto de búsqueda
@@ -45,7 +52,13 @@ fun SelectorUbicacionMapa(navController: NavController) {
             value = direccionTexto,
             onValueChange = { newValue -> direccionTexto = newValue },
             label = { Text("Buscar dirección") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = DarkButton,
+                unfocusedBorderColor = DarkButton,
+                focusedTextColor = Color.Gray,
+                unfocusedTextColor = Color.Gray
+            ),
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -60,9 +73,11 @@ fun SelectorUbicacionMapa(navController: NavController) {
                     cameraPositionState.move(CameraUpdateFactory.newLatLngZoom(coords, 15f))
                 }
             },
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.align(Alignment.End),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+            shape = RoundedCornerShape(10.dp)
         ) {
-            Text("Buscar")
+            Text("Buscar", color = Color.White)
         }
 
         Spacer(modifier = Modifier.height(12.dp))

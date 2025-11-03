@@ -10,13 +10,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +31,7 @@ import com.google.gson.GsonBuilder
 import com.planapp.qplanzaso.model.Usuario
 import com.planapp.qplanzaso.model.Evento
 import com.planapp.qplanzaso.ui.components.QTopBar
+import com.planapp.qplanzaso.ui.components.SearchComponent
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.TimestampTypeAdapter
 import com.planapp.qplanzaso.ui.theme.DarkGrayText
 import com.planapp.qplanzaso.ui.theme.PrimaryColor
@@ -44,8 +41,6 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
-import com.google.gson.Gson
-
 
 @Composable
 fun Profile(
@@ -54,13 +49,15 @@ fun Profile(
     eventoViewModel: EventoViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val usuario by usuarioViewModel.usuario.collectAsState()
-    val eventos by eventoViewModel.eventos.collectAsState()
+    val eventosCreados by eventoViewModel.eventos.collectAsState()
+    val eventosInscritosState by eventoViewModel.eventosInscritos.collectAsState()
     val loading by eventoViewModel.loading.collectAsState()
 
-    // 🔹 Cargar eventos del usuario cuando esté disponible
+    // 🔹 Cargar eventos creados e inscritos
     LaunchedEffect(usuario) {
         usuario?.uid?.let { uid ->
-            eventoViewModel.cargarEventosDelUsuario(uid)
+            eventoViewModel.cargarEventosDelUsuario(uid) // eventos creados
+            eventoViewModel.obtenerEventosInscritos(uid) // eventos inscritos
         }
     }
 
@@ -71,14 +68,14 @@ fun Profile(
     } else {
         PerfilContenido(
             usuario = usuario!!,
-            eventos = eventos,
+            eventosCreados = eventosCreados,
+            eventosInscritos = eventosInscritosState,
             loading = loading,
             onCrearEvento = { navController.navigate("NewEventScreen") },
             onCerrarSesion = {
                 usuarioViewModel.cerrarSesion()
-                Toast.makeText(navController.context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
                 navController.navigate("login") {
-                    popUpTo(0) { inclusive = true } // Limpia todo el backstack
+                    popUpTo(0) { inclusive = true }
                 }
             },
             navController = navController,
@@ -90,13 +87,32 @@ fun Profile(
 @Composable
 fun PerfilContenido(
     usuario: Usuario,
-    eventos: List<Evento>,
+    eventosCreados: List<Evento>,
+    eventosInscritos: List<Evento>,
     loading: Boolean,
     onCrearEvento: () -> Unit,
     onCerrarSesion: () -> Unit,
     navController: NavController,
     eventoViewModel: EventoViewModel
 ) {
+    var selectedTabIndex by remember { mutableStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+
+    val tabs = listOf("Creados", "Inscritos")
+    val tabIcons = listOf(Icons.Default.CalendarToday, Icons.Default.ConfirmationNumber)
+
+    val eventosFiltrados = remember(searchQuery, selectedTabIndex, eventosCreados, eventosInscritos) {
+        val baseList = if (selectedTabIndex == 0) eventosCreados else eventosInscritos
+        if (searchQuery.isBlank()) baseList
+        else baseList.filter {
+            it.nombre.contains(searchQuery, ignoreCase = true) ||
+                    (it.direccion?.contains(searchQuery, ignoreCase = true) ?: false)
+        }
+    }
+
+
+    val usuarioId = usuario.uid
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,19 +120,16 @@ fun PerfilContenido(
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // TopBar
-        QTopBar(navController = navController, title = "Mi perfil")
+        QTopBar(navController = navController, title = "Mi perfil", showBackButton = false)
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // 🔹 Contenedor con imagen centrada y botón flotante a la derecha
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
-
             AsyncImage(
                 model = usuario.fotoPerfil.ifEmpty { "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" },
                 contentDescription = "Foto de perfil",
@@ -125,28 +138,21 @@ fun PerfilContenido(
                     .clip(CircleShape),
                 contentScale = ContentScale.Crop
             )
-
             IconButton(
                 onClick = onCerrarSesion,
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Logout,
-                    contentDescription = "Cerrar sesión",
-                    tint = Color.Gray
-                )
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión", tint = Color.Gray)
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
 
-        // 🧾 Nombre y correo
         Text(
             text = usuario.nombre,
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.align(Alignment.CenterHorizontally),
             color = DarkGrayText
-
         )
         Text(
             text = usuario.correo,
@@ -164,65 +170,88 @@ fun PerfilContenido(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // crear evento
         Button(
             onClick = onCrearEvento,
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp),
+            modifier = Modifier.fillMaxWidth().height(48.dp),
             shape = RoundedCornerShape(10.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.AddCircle,
-                contentDescription = "Crear evento",
-                tint = Color.White
-            )
-            Spacer(modifier = Modifier.width(8.dp))
+            Icon(Icons.Default.AddCircle, contentDescription = "Crear evento", tint = Color.White)
+            Spacer(Modifier.width(8.dp))
             Text("Crear evento", fontSize = 17.sp, color = Color.White)
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(Modifier.height(20.dp))
 
-        // 📅 Lista de eventos
-        Text(
-            text = "Tus eventos creados",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = Color(0xFF333333)
+        TabRow(
+            selectedTabIndex = selectedTabIndex,
+            containerColor = Color.Transparent,
+            contentColor = PrimaryColor,
+            indicator = { tabPositions ->
+                TabRowDefaults.Indicator(
+                    Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                    color = PrimaryColor
+                )
+            }
+        ) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTabIndex == index,
+                    onClick = { selectedTabIndex = index },
+                    selectedContentColor = PrimaryColor,
+                    unselectedContentColor = Color.Gray,
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = tabIcons[index], contentDescription = title, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text(title)
+                        }
+                    }
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        SearchComponent(
+            searchText = searchQuery,
+            onSearchTextChanged = { searchQuery = it },
+            placeholderText = "Buscar evento..."
         )
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(Modifier.height(18.dp))
 
-        if (loading) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        when {
+            loading -> Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = PrimaryColor)
             }
-        } else if (eventos.isEmpty()) {
-            Text(
-                text = "No tienes eventos próximos",
+
+            eventosFiltrados.isEmpty() -> Text(
+                text = if (selectedTabIndex == 0)
+                    "No tienes eventos creados"
+                else
+                    "No estás inscrito en ningún evento",
                 color = Color.Gray,
                 fontSize = 15.sp,
                 modifier = Modifier.padding(top = 12.dp)
             )
-        } else {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                eventos.forEach { evento ->
-                    EventoCard(
-                        evento = evento,
-                        navController = navController,
-                        eventoViewModel = eventoViewModel
-                    )
+
+            else -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (selectedTabIndex == 0) {
+                    eventosFiltrados.forEach { evento ->
+                        EventoCard(evento = evento, navController = navController, eventoViewModel = eventoViewModel, editable = true, usuarioId = usuarioId)
+                    }
+                } else {
+                    eventosFiltrados.forEach { evento ->
+                        EventoCard(evento = evento, navController = navController, eventoViewModel = eventoViewModel, editable = false, usuarioId = usuarioId)
+                    }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
+        Spacer(Modifier.height(32.dp))
     }
 }
 
@@ -230,16 +259,15 @@ fun PerfilContenido(
 fun EventoCard(
     evento: Evento,
     navController: NavController,
-    eventoViewModel: EventoViewModel
+    eventoViewModel: EventoViewModel,
+    editable: Boolean = true,
+    usuarioId: String // 🔹 nuevo parámetro
 ) {
     val sdf = remember { SimpleDateFormat("dd MMM", Locale("es", "ES")) }
-    val fechaTexto = try {
-        evento.fechaInicio?.toDate()?.let { sdf.format(it) } ?: "Sin fecha"
-    } catch (e: Exception) {
-        "Sin fecha"
-    }
+    val fechaTexto = try { evento.fechaInicio?.toDate()?.let { sdf.format(it) } ?: "Sin fecha" } catch (e: Exception) { "Sin fecha" }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showCancelDialog by remember { mutableStateOf(false) } // 🔹 diálogo cancelar inscripción
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -249,21 +277,13 @@ fun EventoCard(
             .fillMaxWidth()
             .height(140.dp)
             .clickable {
-                // ✅ Usa el mismo Gson con el TypeAdapter
-                val gson = GsonBuilder()
-                    .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
-                    .create()
-
+                val gson = GsonBuilder().registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter()).create()
                 val eventoJson = gson.toJson(evento)
                 val encodedJson = URLEncoder.encode(eventoJson, StandardCharsets.UTF_8.toString())
-
                 navController.navigate("detailEvent/$encodedJson")
             }
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            // 🖼️ Imagen del evento
+        Row(Modifier.fillMaxSize()) {
             AsyncImage(
                 model = evento.imagenUrl ?: evento.imagen,
                 contentDescription = evento.nombre,
@@ -274,7 +294,6 @@ fun EventoCard(
                 contentScale = ContentScale.Crop
             )
 
-            // 🧾 Información del evento
             Column(
                 modifier = Modifier
                     .padding(12.dp)
@@ -288,97 +307,99 @@ fun EventoCard(
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = Color(0xFF222222),
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.CalendarToday,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(fechaTexto, color = Color.Gray, fontSize = 13.sp)
                     }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.LocationOn,
-                            contentDescription = null,
-                            tint = Color.Gray,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.LocationOn, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
                         Text(
                             evento.direccion ?: "Sin dirección",
                             color = Color.Gray,
                             fontSize = 13.sp,
-                            maxLines = 1
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
 
-                // 🟠 Botones de acción
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    // ✏️ Editar
-                    IconButton(
-                        onClick = {
-                            val gson = GsonBuilder()
-                                .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
-                                .create()
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (editable) {
+                        IconButton(onClick = {
+                            val gson = GsonBuilder().registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter()).create()
                             val eventoJson = gson.toJson(evento)
                             val encodedJson = URLEncoder.encode(eventoJson, StandardCharsets.UTF_8.toString())
-                            navController.navigate("EditEventScreen/${encodedJson}")
+                            navController.navigate("EditEventScreen/$encodedJson")
+                        }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Editar evento", tint = PrimaryColor)
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar evento",
-                            tint = PrimaryColor
-                        )
-                    }
 
-                    // 🗑️ Eliminar
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar evento",
-                            tint = Color.Red
-                        )
+                        IconButton(onClick = { showDeleteDialog = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Eliminar evento", tint = Color.Red)
+                        }
+                    } else {
+                        // 🔹 Botón cancelar inscripción
+                        IconButton(onClick = { showCancelDialog = true }) {
+                            Icon(Icons.Default.Cancel, contentDescription = "Cancelar inscripción", tint = Color.Red)
+                        }
                     }
                 }
             }
         }
     }
 
-    // ⚠️ Diálogo de confirmación de eliminación
-    if (showDeleteDialog) {
+    // 🔹 AlertDialog cancelar inscripción
+    if (showCancelDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Eliminar evento") },
-            text = { Text("¿Estás segura de que deseas eliminar este evento? Esta acción no se puede deshacer.") },
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text("Cancelar inscripción", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGrayText) },
+            text = { Text("¿Deseas cancelar tu inscripción a este evento?", fontSize = 14.sp, color = DarkGrayText) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                        evento.id?.let { id ->
-                            eventoViewModel.eliminarEvento(id)
-                        }
+                TextButton(onClick = {
+                    showCancelDialog = false
+                    evento.id?.let {
+                        eventoViewModel.cancelarInscripcion(it, usuarioId)
                     }
-                ) {
-                    Text("Eliminar", color = Color.Red)
+                }) {
+                    Text("Cancelar inscripción", color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancelar", color = PrimaryColor)
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Volver", color = PrimaryColor, fontWeight = FontWeight.Bold)
                 }
             },
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
+        )
+    }
+
+    // 🔹 AlertDialog eliminar evento (solo editable)
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar evento", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkGrayText) },
+            text = { Text("¿Estás segura de que deseas eliminar este evento? Esta acción no se puede deshacer.", fontSize = 14.sp, color = DarkGrayText) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDeleteDialog = false
+                    evento.id?.let { eventoViewModel.eliminarEvento(it) }
+                }) { Text("Eliminar", color = Color.Red, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar", color = PrimaryColor, fontWeight = FontWeight.Bold)
+                }
+            },
+            shape = RoundedCornerShape(16.dp),
+            containerColor = Color.White
         )
     }
 }

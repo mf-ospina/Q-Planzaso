@@ -746,7 +746,8 @@ class EventoViewModel(
             try {
                 _loading.value = true
                 inscripcionRepo.cancelarInscripcion(eventoId, usuarioId)
-                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+                // Actualiza la lista local eliminando el evento cancelado
+                _eventosInscritos.value = _eventosInscritos.value.filter { it.id != eventoId }
             } catch (e: Exception) {
                 _error.value = "Error cancelando inscripción: ${e.message}"
             } finally {
@@ -754,24 +755,18 @@ class EventoViewModel(
             }
         }
     }
-
+    private val _eventosInscritos = MutableStateFlow<List<Evento>>(emptyList())
+    val eventosInscritos: StateFlow<List<Evento>> = _eventosInscritos
     fun obtenerEventosInscritos(usuarioId: String, soloFuturos: Boolean = true) {
         viewModelScope.launch {
             try {
                 _loading.value = true
-                val eventos = inscripcionRepo.obtenerEventosInscritos(usuarioId)
-                val ahoraMillis = System.currentTimeMillis()
-
-                _eventos.value = if (soloFuturos) {
-                    eventos.filter { evento ->
-                        val inicio = evento.fechaInicio
-                        inicio != null && inicio.toDate().time > ahoraMillis
-                    }
+                val lista = inscripcionRepo.obtenerEventosInscritos(usuarioId)
+                val ahora = System.currentTimeMillis()
+                _eventosInscritos.value = if (soloFuturos) {
+                    lista.filter { it.fechaInicio?.toDate()?.time ?: 0 > ahora }
                 } else {
-                    eventos.filter { evento ->
-                        val fin = evento.fechaFin
-                        fin != null && fin.toDate().time < ahoraMillis
-                    }
+                    lista
                 }
             } catch (e: Exception) {
                 _error.value = "Error al obtener eventos inscritos: ${e.message}"
@@ -780,6 +775,7 @@ class EventoViewModel(
             }
         }
     }
+
 
     // ------------------------------------------
     // 🔹 Asistencia real (Check-in)

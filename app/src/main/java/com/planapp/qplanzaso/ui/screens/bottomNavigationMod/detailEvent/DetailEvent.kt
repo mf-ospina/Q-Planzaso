@@ -615,13 +615,35 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                 if (showDialog) {
                     AlertDialog(
                         onDismissRequest = { showDialog = false },
-                        title = { Text("¡Registro exitoso!") },
-                        text = { Text("Te has inscrito correctamente al evento") },
+                        title = {
+                            Text(
+                                "¡Registro exitoso!",
+                                color = PrimaryColor,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        text = {
+                            Text(
+                                "Te has inscrito correctamente al evento",
+                                color = DarkGrayText
+                            )
+                        },
                         confirmButton = {
-                            TextButton(onClick = { showDialog = false }) { Text("Aceptar") }
-                        }
+                            Button(
+                                onClick = { showDialog = false },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PrimaryColor,
+                                    contentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Aceptar")
+                            }
+                        },
+                        containerColor = Color.White // Fondo del popup
                     )
                 }
+
             }
         } else {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

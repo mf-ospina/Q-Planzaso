@@ -86,6 +86,7 @@ fun MoreInfoScreen(
             .fillMaxSize()
             .background(Color.White)
             .padding(horizontal = 32.dp, vertical = 16.dp)
+            .padding(WindowInsets.systemBars.asPaddingValues())
     ) {
         Column(
             modifier = Modifier

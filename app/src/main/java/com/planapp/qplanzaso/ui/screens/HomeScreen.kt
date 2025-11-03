@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding // 👈 Import necesario
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
@@ -35,10 +35,7 @@ import com.planapp.qplanzaso.ui.theme.PrimaryColor
 import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 
 @Composable
-fun HomeScreen(
-    navController: NavController,
-    calendarioViewModel: CalendarioViewModel
-) {
+fun HomeScreen(navController: NavController, calendarioViewModel: CalendarioViewModel) {
     val navItemList = listOf(
         NavItem(label = "Calendario", icon = Icons.Default.CalendarMonth, route = "calendar"),
         NavItem(label = "Inicio", icon = Icons.Default.Home, route = "home"),
@@ -48,12 +45,11 @@ fun HomeScreen(
     var selectedItemIndex by remember { mutableStateOf(1) }
     val categoria = CategoriaRepository()
 
-    // 🔹 No navegamos automáticamente desde Home. Las notificaciones se manejan en MainActivity.
-
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding(),
+            .systemBarsPadding(), // 👈 protege contenido del notch si es necesario
+        containerColor = Color.White,
         bottomBar = {
             NavigationBar(
                 modifier = Modifier,
@@ -73,7 +69,9 @@ fun HomeScreen(
                                 tint = if (selected) PrimaryColor else Color.Gray
                             )
                         },
-                        label = { Text(text = navItem.label) },
+                        label = {
+                            Text(text = navItem.label)
+                        },
                         alwaysShowLabel = true,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = PrimaryColor,
@@ -95,6 +93,7 @@ fun HomeScreen(
                     start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
                     top = innerPadding.calculateTopPadding(),
                     end = innerPadding.calculateEndPadding(LayoutDirection.Ltr)
+                    // 👇 NO aplicamos bottom padding
                 ),
             selectedItemIndex = selectedItemIndex,
             navController = navController,
@@ -112,6 +111,7 @@ fun ContentScreen(
 ) {
     when(selectedItemIndex){
         0 -> CalendarioScreen(navController = navController, viewModel = calendarioViewModel)
+        // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
         1 -> Home(modifier = modifier, navController = navController)
         2 -> Profile(navController = navController)
     }
@@ -134,7 +134,12 @@ fun HomeScreenPreview() {
     val navController = rememberNavController()
 
     // 🔹 No pasamos ViewModel real al preview
+    // Creamos una función auxiliar solo para preview
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text("Vista previa de HomeScreen (sin ViewModel)", color = Color.Gray)
     }
 }
+
+
+
+
