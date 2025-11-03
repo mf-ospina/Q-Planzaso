@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
 
+import java.util.Date
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -47,6 +48,7 @@ import java.text.NumberFormat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
+import com.planapp.qplanzaso.ui.viewModel.NotificacionViewModel
 import com.planapp.qplanzaso.utils.JsonNavHelper
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
@@ -127,6 +129,8 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                             .padding(horizontal = 16.dp, vertical = 10.dp), // añade margen interno
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val notificacionViewModel: NotificacionViewModel = viewModel() // obtener ViewModel aquí arriba
+
                         Button(
                             onClick = {
                                 if (usuarioId == null) {
@@ -135,9 +139,19 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                                 }
 
                                 if (!isRegistered && evento != null && evento.id != null) {
+                                    // 1️⃣ Inscribirse al evento
                                     eventoViewModel.inscribirseEnEvento(evento.id!!, usuarioId)
                                     isRegistered = true
                                     showDialog = true
+
+                                    // 2️⃣ Agregar recordatorios 7, 3 y 1 día antes
+                                    notificacionViewModel.agregarRecordatoriosEvento(
+                                        usuarioId = usuarioId,
+                                        tituloEvento = evento.nombre,
+                                        fechaEvento = evento.fechaInicio?.toDate() ?: Date()
+                                    )
+
+                                    Toast.makeText(context, "¡Inscripción exitosa! Recordatorios configurados 📌", Toast.LENGTH_SHORT).show()
                                 } else {
                                     Toast.makeText(context, "Ya estás inscrito a este evento", Toast.LENGTH_SHORT).show()
                                 }

@@ -27,8 +27,11 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.data.repository.AsistenciaRepository
 import com.planapp.qplanzaso.data.repository.InscripcionRepository
+import com.planapp.qplanzaso.data.repository.NotificacionRepository
 import com.planapp.qplanzaso.data.repository.StorageRepository
 import com.planapp.qplanzaso.model.EventFormData
+import com.planapp.qplanzaso.model.Notificacion
+import com.planapp.qplanzaso.model.TipoNotificacion
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
@@ -44,10 +47,12 @@ class EventoViewModel(
     private val comentarioRepo: ComentarioRepository = ComentarioRepository(),
     private val inscripcionRepo: InscripcionRepository = InscripcionRepository(),
     private val asistenciaRepo: AsistenciaRepository = AsistenciaRepository(),
-    private val storageRepo: StorageRepository = StorageRepository()
+    private val storageRepo: StorageRepository = StorageRepository(),
+    private val notificacionRepo: NotificacionRepository = NotificacionRepository(),
 
 
-) : ViewModel() {
+
+    ) : ViewModel() {
 
     // ------------------------------------------
     // 🔹 Estados principales
@@ -104,6 +109,8 @@ class EventoViewModel(
     var imagenUri by mutableStateOf<Uri?>(null)
     var ubicacionLatLng by mutableStateOf<LatLng?>(null)
     var direccionMapa by mutableStateOf<String?>(null)
+
+
 
 
     // ------------------------------------------
@@ -292,6 +299,21 @@ class EventoViewModel(
                 _eventoSeleccionado.value = eventoActualizado
                 cargarDatosIniciales()
 
+                // 🔹 6️⃣ Notificar a inscritos y favoritos
+                val inscritos = inscripcionRepo.obtenerUsuariosInscritos(eventoId)
+                val favoritos = eventoRepo.obtenerUsuariosFavoritos(eventoId)
+                val destinatarios = (inscritos + favoritos).distinct()
+
+                if (destinatarios.isNotEmpty()) {
+                    notificacionRepo.enviarNotificacionMasiva(
+                        usuariosIds = destinatarios,
+                        titulo = "Evento actualizado",
+                        mensaje = "El evento '${eventoActualizado.nombre}' ha sido modificado. Revisa los detalles actualizados.",
+                        tipo = TipoNotificacion.EVENTO_MODIFICADO
+                    )
+                }
+
+
                 onSuccess()
             } catch (e: Exception) {
                 val mensaje = "Error actualizando evento: ${e.message}"
@@ -326,12 +348,84 @@ class EventoViewModel(
         viewModelScope.launch {
             try {
                 _loading.value = true
+                // 🔹 Notificar a quienes tenían el evento en favoritos
+                val favoritos = eventoRepo.obtenerUsuariosFavoritos(eventoId)
+                if (favoritos.isNotEmpty()) {
+                    notificacionRepo.enviarNotificacionMasiva(
+                        usuariosIds = favoritos,
+                        titulo = "Evento eliminado",
+                        mensaje = "Un evento que marcaste como favorito ha sido eliminado.",
+                        tipo = TipoNotificacion.FAVORITO_ELIMINADO
+                    )
+                }
+
                 eventoRepo.eliminarEvento(eventoId)
                 cargarDatosIniciales()
             } catch (e: Exception) {
                 _error.value = "Error eliminando evento: ${e.message}"
             } finally {
                 _loading.value = false
+            }
+        }
+    }
+
+
+    fun enviarRecordatoriosEventosProximos(usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventos = inscripcionRepo.obtenerEventosInscritos(usuarioId)
+                val ahora = System.currentTimeMillis()
+                val unDiaMillis = 24 * 60 * 60 * 1000
+
+                val eventosProximos = eventos.filter { evento ->
+                    val fechaInicio = evento.fechaInicio?.toDate()?.time ?: 0L
+                    fechaInicio in (ahora + 1..ahora + unDiaMillis)
+                }
+
+                eventosProximos.forEach { evento ->
+                    notificacionRepo.enviarNotificacion(
+                        usuarioId = usuarioId,
+                        titulo = "Recordatorio de evento",
+                        mensaje = "Tu evento '${evento.nombre}' es mañana. ¡No faltes!",
+                        tipo = TipoNotificacion.RECORDATORIO
+                    )
+                }
+            } catch (e: Exception) {
+                _error.value = "Error enviando recordatorios: ${e.message}"
+            }
+        }
+    }
+
+
+
+
+    // 🔹 Recordatorios locales automáticos
+
+
+    /**
+     * Envía recordatorios a los usuarios inscritos en eventos próximos (1 día antes)
+     * Se puede llamar cuando el usuario abre la app o desde WorkManager.
+     */
+    fun verificarEventosProximosYRecordar(context: Context, usuarioId: String) {
+        viewModelScope.launch {
+            try {
+                val eventosInscritos = inscripcionRepo.obtenerEventosInscritos(usuarioId)
+                val ahora = System.currentTimeMillis()
+                val unDiaMillis = 24 * 60 * 60 * 1000
+
+                eventosInscritos.forEach { evento ->
+                    val fechaEvento = evento.fechaInicio?.toDate()?.time ?: return@forEach
+                    if (fechaEvento in (ahora + 1..ahora + unDiaMillis)) {
+                        notificacionRepo.enviarNotificacion(
+                            usuarioId = usuarioId,
+                            titulo = "Recordatorio de evento",
+                            mensaje = "Tu evento '${evento.nombre}' es mañana. ¡No faltes!",
+                            tipo = TipoNotificacion.RECORDATORIO
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _error.value = "Error generando recordatorios: ${e.message}"
             }
         }
     }
@@ -615,12 +709,29 @@ class EventoViewModel(
     // ------------------------------------------
     // 🔹 Inscripciones
     // ------------------------------------------
-    fun inscribirseEnEvento(eventoId: String, usuarioId: String) {
+    fun inscribirseEnEvento(eventoId: String, usuarioId: String? = null) {
         viewModelScope.launch {
             try {
                 _loading.value = true
-                inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+
+                val uid = usuarioId ?: FirebaseAuth.getInstance().currentUser?.uid
+                if (uid == null) {
+                    _error.value = "Usuario no autenticado"
+                    return@launch
+                }
+
+                inscripcionRepo.inscribirseEnEvento(eventoId, uid)
+
+                // Actualiza el evento seleccionado si está en detalle
                 _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+
+                // Si se está en módulo de calendario, emitir refresco
+                try {
+                    CalendarioViewModel().emitirRefresco()
+                } catch (_: Exception) {
+                    // Ignorar si no está inicializado (evita crash en otros módulos)
+                }
+
             } catch (e: Exception) {
                 _error.value = "Error al inscribirse: ${e.message}"
             } finally {
@@ -628,6 +739,7 @@ class EventoViewModel(
             }
         }
     }
+
 
     fun cancelarInscripcion(eventoId: String, usuarioId: String) {
         viewModelScope.launch {
@@ -837,16 +949,6 @@ class EventoViewModel(
         } catch (e: Exception) {
             _error.value = "Error creando evento: ${e.message}"
             null
-        }
-    }
-
-    fun inscribirseEnEvento(eventoId: String) {
-        viewModelScope.launch {
-            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
-            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
-
-            // 🔹 Notificamos al CalendarioViewModel
-            CalendarioViewModel().emitirRefresco()
         }
     }
 

@@ -303,4 +303,23 @@ class EventoRepository {
             null
         }
     }
+
+    // 🔹 Obtener los usuarios que tienen un evento como favorito
+    suspend fun obtenerUsuariosFavoritos(eventoId: String): List<String> {
+        val snapshot = db.collection("evento")
+            .document(eventoId)
+            .collection("favoritos")
+            .get().await()
+        return snapshot.documents.mapNotNull { it.id }
+    }
+
+    // 🔹 Obtener los usuarios inscritos a un evento
+    suspend fun obtenerUsuariosInscritos(eventoId: String): List<String> {
+        val snapshot = db.collection("evento")
+            .document(eventoId)
+            .collection("inscripciones")
+            .get().await()
+        return snapshot.documents.mapNotNull { it.id }
+    }
+
 }

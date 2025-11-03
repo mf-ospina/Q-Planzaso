@@ -9,21 +9,14 @@ import kotlinx.coroutines.tasks.await
 
 /**
  * Repositorio de autenticación y manejo de usuarios para Firebase.
- * - Crea y autentica usuarios con Firebase Auth.
- * - Guarda la información del usuario en Firestore (sin contraseñas).
- * - Permite login, logout y recuperación de contraseña.
  */
 class AuthRepository(
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    val auth: FirebaseAuth = FirebaseAuth.getInstance(),
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) {
 
     /**
-     * Registra un nuevo usuario en Firebase Auth y lo almacena en Firestore.
-     * @param email correo electrónico del usuario
-     * @param password contraseña (solo se guarda en Firebase Auth)
-     * @param nombre nombre del usuario
-     * @param tipoUsuario "particular" o "empresarial"
+     * Registra un nuevo usuario en Firebase Auth y Firestore.
      */
     suspend fun registerUser(
         email: String,
@@ -32,11 +25,9 @@ class AuthRepository(
         tipoUsuario: String
     ): AuthResult<Usuario> {
         return try {
-            // Crear usuario en Authentication
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val firebaseUser = result.user ?: return AuthResult.Error("No se pudo crear el usuario.")
 
-            // Crear objeto Usuario para Firestore
             val nuevoUsuario = Usuario(
                 uid = firebaseUser.uid,
                 nombre = nombre,
@@ -45,11 +36,10 @@ class AuthRepository(
                 fechaRegistro = null,
                 preferencias = listOf(),
                 fotoPerfil = "",
-                verified = tipoUsuario == "empresarial", // por ahora, marcamos empresariales como verificados
+                verified = tipoUsuario == "empresarial",
                 eventosPublicados = 0
             )
 
-            // Guardar usuario en Firestore
             val userMap = nuevoUsuario.toMap().toMutableMap()
             userMap["fechaRegistro"] = FieldValue.serverTimestamp()
 
@@ -85,7 +75,7 @@ class AuthRepository(
     }
 
     /**
-     * Devuelve el usuario autenticado actualmente (si lo hay).
+     * Devuelve el usuario actualmente autenticado.
      */
     fun currentUser(): FirebaseUser? = auth.currentUser
 
