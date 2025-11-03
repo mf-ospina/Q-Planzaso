@@ -13,11 +13,13 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.planapp.qplanzaso.model.EventFormData
 import com.planapp.qplanzaso.model.Evento
+import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
 import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
 import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
+import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.favorites.FavoritosScreen
 import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 
@@ -111,6 +113,12 @@ fun AppNavigation(
             EditEventScreen(navController = navController, encodedJson = encodedJson)
         }
 
+
+
+        composable("favoritos") {
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+            FavoritosScreen(navController = navController, viewModel = eventoViewModel, usuarioId = usuarioId)
+        }
 
 
     }

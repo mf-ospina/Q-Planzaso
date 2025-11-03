@@ -14,8 +14,10 @@ data class Evento(
     var categoriasIds: List<String> = emptyList(),
     var vibras: List<String> = emptyList(),
     var precio: Double = 0.0,
+
     // 🔹 Patrocinadores
     var patrocinadores: List<String> = emptyList(),
+
     var fechaInicio: Timestamp? = null,
     var fechaFin: Timestamp? = null,
     var organizadorId: String = "",
@@ -33,10 +35,13 @@ data class Evento(
     var ciudad: String? = null,
     var pais: String? = null,
 
-    //Inscripcion
+    // 🔹 Inscripción
     val inscritosIds: List<String> = emptyList(), // lista de usuarios inscritos
 
-    //Storage
-    val imagenUrl: String? = null
+    // 🔹 Storage
+    val imagenUrl: String? = null,
 
+    // 🔹 Favoritos
+    var favoritosIds: List<String> = emptyList(), // lista de usuarios que marcaron como favorito
+    var esFavorito: Boolean = false // campo auxiliar para saber si el usuario actual lo marcó
 )

@@ -37,8 +37,16 @@ class EventoRepository {
     }
 
     // 🔹 Obtener un solo evento por ID
+
+    /*
     suspend fun obtenerEvento(eventoId: String): Evento? {
         val doc = db.collection("evento").document(eventoId).get().await()
+        return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
+    }*/
+
+    suspend fun obtenerEvento(eventoId: String): Evento? {
+        //                                  👇
+        val doc = db.collection("evento").document(eventoId).get().await() // <-- CORREGIDO
         return if (doc.exists()) doc.toObject(Evento::class.java)?.copy(id = doc.id) else null
     }
 
@@ -179,6 +187,39 @@ class EventoRepository {
             .collection("favoritos").document(usuarioId).delete().await()
     }
 
+    suspend fun obtenerEventosFavoritosPorUsuario(usuarioId: String): List<Evento> {
+        val eventosSnapshot = db.collection("evento").get().await()
+        val eventosFavoritos = mutableListOf<Evento>()
+
+        for (eventoDoc in eventosSnapshot.documents) {
+            val favoritoDoc = eventoDoc.reference
+                .collection("favoritos")
+                .document(usuarioId)
+                .get()
+                .await()
+
+            if (favoritoDoc.exists()) {
+                eventoDoc.toObject(Evento::class.java)?.let { evento ->
+                    eventosFavoritos.add(evento.copy(id = eventoDoc.id))
+                }
+            }
+        }
+
+        return eventosFavoritos
+    }
+
+    suspend fun esEventoFavorito(eventoId: String, usuarioId: String): Boolean {
+        val doc = db.collection("evento")
+            .document(eventoId)
+            .collection("favoritos")
+            .document(usuarioId)
+            .get()
+            .await()
+        return doc.exists()
+    }
+
+
+
     // 🔹 Calcular distancia entre coordenadas
     fun calcularDistanciaKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6371.0
@@ -193,6 +234,7 @@ class EventoRepository {
 
     // 🔹 Calificaciones
     suspend fun registrarCalificacion(eventoId: String, usuarioId: String, valor: Double) {
+        // Guardar la calificación en la subcolección "calificaciones" con doc = usuarioId
         val calRef = db.collection("evento").document(eventoId)
             .collection("calificaciones").document(usuarioId)
         val data = mapOf(
@@ -201,6 +243,8 @@ class EventoRepository {
             "fecha" to com.google.firebase.Timestamp.now()
         )
         calRef.set(data, SetOptions.merge()).await()
+
+        // Recalcular promedio
         recalcularPromedioCalificaciones(eventoId)
     }
 
@@ -214,14 +258,16 @@ class EventoRepository {
     private suspend fun recalcularPromedioCalificaciones(eventoId: String) {
         val snapshot = db.collection("evento").document(eventoId)
             .collection("calificaciones").get().await()
+
         val valores = snapshot.documents.mapNotNull { it.getDouble("valor") }
         val promedio = if (valores.isNotEmpty()) valores.average() else 0.0
         val count = valores.size
+
+        // Actualizar campos en documento evento
         db.collection("evento").document(eventoId)
             .set(mapOf("calificacionPromedio" to promedio, "calificacionesCount" to count), SetOptions.merge())
             .await()
     }
-
     suspend fun actualizarCampoEvento(eventoId: String, campo: String, valor: Any) {
         db.collection("evento").document(eventoId)
             .update(campo, valor)
@@ -237,4 +283,24 @@ class EventoRepository {
         db.collection("eventos").document(eventoId).set(evento).await()
     }
 
+    suspend fun obtenerCalificacionUsuario(eventoId: String, usuarioId: String): Double? {
+        return try {
+            // 1. Apunta al documento exacto que quieres leer
+            val docRef = db.collection("evento").document(eventoId)
+                .collection("calificaciones").document(usuarioId)
+
+            // 2. Intenta obtenerlo
+            val snapshot = docRef.get().await()
+
+            // 3. Si existe, devuelve el campo "valor". Si no, devuelve null.
+            if (snapshot.exists()) {
+                snapshot.getDouble("valor")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            println("Error al obtener calificación de usuario: ${e.message}")
+            null
+        }
+    }
 }

@@ -30,7 +30,12 @@ class ComentarioRepository {
             .orderBy("fecha", Query.Direction.DESCENDING)
             .get()
             .await()
-        return snapshot.toObjects(ComentarioEvento::class.java)
+
+        // Mapeo para incluir el ID
+        return snapshot.documents.mapNotNull { document ->
+            val comentario = document.toObject(ComentarioEvento::class.java)
+            comentario?.copy(id = document.id)
+        }
     }
 
     // Obtener comentarios paginados
@@ -80,3 +85,10 @@ class ComentarioRepository {
             .await()
     }
 }
+
+
+
+
+
+
+

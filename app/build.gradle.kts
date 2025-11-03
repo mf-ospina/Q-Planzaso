@@ -61,6 +61,7 @@ android {
 
 dependencies {
 
+    implementation(libs.androidx.animation.core)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 
     implementation(libs.androidx.core.ktx)
