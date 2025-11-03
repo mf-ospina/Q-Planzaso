@@ -12,12 +12,20 @@ class ComentarioRepository {
     private val db = FirebaseFirestore.getInstance()
 
     // Crear comentario
+    // Archivo: ComentarioRepository.kt
+
+    // Crear comentario
     suspend fun crearComentario(eventoId: String, comentario: ComentarioEvento): String {
         val colRef = db.collection("evento").document(eventoId).collection("comentarios")
-        val docRef = colRef.document()
-        val id = comentario.id.ifEmpty { docRef.id }
+
+        // Si el comentario ya tiene un ID, lo usamos (para casos de edición/reintento)
+        val docRef = if (comentario.id.isNullOrEmpty()) colRef.document() else colRef.document(comentario.id!!)
+
+        // Aseguramos el ID y la fecha
+        val id = docRef.id
         val toSave = comentario.copy(id = id, fecha = Timestamp.now())
 
+        // ⚠️ CRÍTICO: Usamos SetOptions.merge para asegurar que si ya existía (por ID), se actualice.
         docRef.set(toSave, SetOptions.merge()).await()
         return id
     }
@@ -72,8 +80,8 @@ class ComentarioRepository {
         )
 
         db.collection("evento").document(eventoId)
-            .collection("comentarios").document(comentario.id)
-            .set(map, SetOptions.merge())
+            .collection("comentarios").document(comentario.id) // ⬅️ Usa el ID para dirigirse
+            .set(map, SetOptions.merge()) // ⬅️ set(map) con ID existente actualiza
             .await()
     }
 
@@ -83,6 +91,23 @@ class ComentarioRepository {
             .collection("comentarios").document(comentarioId)
             .delete()
             .await()
+    }
+
+    suspend fun obtenerComentarioPorUsuario(eventoId: String, usuarioId: String): ComentarioEvento? {
+        val snapshot = db.collection("evento")
+            .document(eventoId)
+            .collection("comentarios")
+            .whereEqualTo("usuarioId", usuarioId) // ⬅️ Filtramos por el ID del usuario
+            .limit(1) // Solo necesitamos un resultado
+            .get()
+            .await()
+
+        // Si se encuentra un documento, lo mapeamos al objeto ComentarioEvento
+        return snapshot.documents.firstOrNull()?.let { document ->
+            val comentario = document.toObject(ComentarioEvento::class.java)
+            // Aseguramos que el ID del documento esté en el objeto
+            comentario?.copy(id = document.id)
+        }
     }
 }
 

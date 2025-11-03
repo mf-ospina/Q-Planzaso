@@ -952,4 +952,55 @@ class EventoViewModel(
         }
     }
 
+    fun inscribirseEnEvento(eventoId: String) {
+        viewModelScope.launch {
+            val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+            inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+
+            // 🔹 Notificamos al CalendarioViewModel
+            CalendarioViewModel().emitirRefresco()
+        }
+    }
+
+    //nuevo evento//
+    fun enviarCalificacionYComentario(
+        eventoId: String,
+        usuarioId: String,
+        rating: Int,
+        comment: String
+    ) {
+        viewModelScope.launch {
+            try {
+                // 1. Crear el objeto ComentarioEvento dentro del ViewModel (Lógica de Negocio)
+                val nuevoComentario = ComentarioEvento(
+                    id = eventoId,
+                    usuarioId = usuarioId,
+                    texto = comment, // Usa el campo correcto de tu modelo, yo usé 'contenido'
+                    calificacion = rating.toDouble(),
+                    fecha = Timestamp.now()
+                    // Nota: Asegúrate de que los nombres de los campos (contenido/texto, fechaCreacion/fecha)
+                    // coincidan con tu modelo ComentarioEvento real.
+                )
+
+                // 2. Usar la función existente agregarComentario
+                agregarComentario(eventoId, nuevoComentario, usuarioId)
+
+            } catch (e: Exception) {
+                _error.value = "Error enviando calificación/comentario: ${e.message}"
+            }
+        }
+    }
+
+    suspend fun obtenerCalificacionDeUsuario(eventoId: String, usuarioId: String): Double {
+        return try {
+            // 🌟 Llama al nuevo método del repositorio 🌟
+            val comentario = comentarioRepo.obtenerComentarioPorUsuario(eventoId, usuarioId)
+
+            // Retorna la calificación (Double) o 0.0 si es nulo
+            comentario?.calificacion ?: 0.0
+        } catch (e: Exception) {
+            // Log error si es necesario
+            0.0
+        }
+    }
 }

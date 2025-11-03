@@ -24,20 +24,27 @@ fun RatingBar(
     maxStars: Int = 5,
     onRatingChanged: (Int) -> Unit = {}
 ) {
+    // 🔹 Estado que guarda la calificación seleccionada por el usuario
+    // CoerceIn asegura que la calificación esté entre 0 y maxStars (usualmente 5)
     var selectedRating by remember { mutableStateOf(initialRating.coerceIn(0, maxStars)) }
 
     Row(
         modifier = Modifier
-            .fillMaxWidth(), // 🔹 Ocupar todo el ancho disponible
-        horizontalArrangement = Arrangement.Center, // 🔹 Centrar las estrellas
+            .fillMaxWidth(), // Ocupar todo el ancho disponible
+        horizontalArrangement = Arrangement.Center, // Centrar las estrellas
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // 🔹 Repite el bloque de código para dibujar cada estrella
         repeat(maxStars) { index ->
-            val isSelected = index < selectedRating
+            val starValue = index + 1
+            val isSelected = starValue <= selectedRating // index < selectedRating
+
+            // 🔹 Animación de color suave (amarillo brillante o gris claro)
             val starColor by animateColorAsState(
                 targetValue = if (isSelected) Color(0xFFFFC107) else Color.LightGray,
                 label = "starColor"
             )
+            // 🔹 Animación de escala (un pequeño "pop" al seleccionar)
             val scale by animateFloatAsState(
                 targetValue = if (isSelected) 1.1f else 1f,
                 label = "starScale"
@@ -45,12 +52,13 @@ fun RatingBar(
 
             Icon(
                 imageVector = if (isSelected) Icons.Filled.Star else Icons.Outlined.Star,
-                contentDescription = "Estrella ${index + 1}",
+                contentDescription = "Estrella $starValue",
                 tint = starColor,
                 modifier = Modifier
-                    .size((40.dp.value * scale).dp) // 🔹 Estrellas más grandes
+                    .size((40.dp.value * scale).dp) // Aplica el tamaño y la escala
                     .clickable {
-                        selectedRating = index + 1
+                        // 🔹 Actualiza el estado local y notifica al componente padre
+                        selectedRating = starValue
                         onRatingChanged(selectedRating)
                     }
             )

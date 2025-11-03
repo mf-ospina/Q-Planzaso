@@ -137,6 +137,25 @@
     <string name="comments_empty_message">No hay comentarios aún. ¡Sé el primero en opinar!</string>
     <string name="comments_load_more">Cargar más comentarios</string>
 
+    <!-- CommentNew -->
+
+    <string name="all_comments_title">Todos los Comentarios</string>
+
+
+    <!-- RatingCommentSection -->
+    <string name="rating_thank_you">¡Gracias por calificar!</string>
+    <string name="rating_select_star">Toca una estrella para calificar</string>
+    <string name="rating_your_rating">Tu Calificación</string>
+    <string name="rating_comment_label">Añade un comentario (Opcional)</string>
+    <string name="rating_comment_placeholder">¿Qué te pareció el evento?</string>
+    <string name="rating_send_button">Enviar Calificación</string>
+
+    <!-- RatingCommentSection Preview Strings -->
+    <string name="rating_preview_not_rated">Vista previa: Sin calificar</string>
+    <string name="rating_preview_rated">Vista previa: Calificado</string>
+
+
+
 
 
 

@@ -114,6 +114,17 @@ fun AppNavigation(
             FavoritosScreen(navController, viewModel = eventoViewModel, usuarioId = usuarioId)
         }
 
+
+        // Asumiendo que tienes una función para definir tus rutas
+
+        composable(route = "all_comments_screen/{eventoId}",
+            arguments = listOf(navArgument("eventoId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val eventoId = backStackEntry.arguments?.getString("eventoId") ?: return@composable
+            AllCommentsScreen(navController = navController, eventoId = eventoId)
+        }
+
+
         // Notificaciones
         composable("notificaciones") {
             val usuarioId = FirebaseAuth.getInstance().currentUser?.uid
