@@ -46,6 +46,7 @@ import com.planapp.qplanzaso.ui.components.EventoMapView
 import java.text.NumberFormat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.planapp.qplanzaso.model.ComentarioEvento
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 import com.planapp.qplanzaso.utils.JsonNavHelper
 import kotlinx.coroutines.launch
@@ -104,10 +105,43 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
     var esFavorito by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    //estados para popup de calificacion
+    var selectedRatingForPopup by remember { mutableStateOf(0) }
+    var commentForEvent by remember { mutableStateOf("") }
+
+    //  Bandera para saber si el usuario ya calificó el evento.
+    var hasUserRated by remember { mutableStateOf(false) }
+
+
     LaunchedEffect(evento) {
         if (evento != null && usuarioId != null) {
             // Verifica si el usuario está inscrito
             isRegistered = evento.inscritosIds.contains(usuarioId)
+        }
+    }
+
+    //Lógica de Carga Inicial de Datos y Calificación
+    LaunchedEffect(evento, usuarioId) {
+        val idEvento = evento?.id
+        val idUsuario = usuarioId
+
+        if (idEvento != null && idUsuario != null) {
+            // Verifica si el usuario está inscrito
+            isRegistered = evento.inscritosIds.contains(idUsuario)
+
+            // CARGA LA CALIFICACIÓN PREVIA
+            val ratingPreviaDouble = eventoViewModel.obtenerCalificacionDeUsuario(idEvento, idUsuario)
+            val ratingPreviaInt = ratingPreviaDouble.toInt() // Convierte a Int para el estado de las estrellas
+
+            if (ratingPreviaInt > 0) {
+                // Si encontramos una calificación previa, actualizamos los estados
+                selectedRatingForPopup = ratingPreviaInt
+                hasUserRated = true
+            } else {
+                // Si no hay calificación, aseguramos que el formulario esté listo para el input
+                selectedRatingForPopup = 0
+                hasUserRated = false
+            }
         }
     }
 
@@ -201,8 +235,6 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                                     eventoViewModel.verificarSiEsFavorito(evento.id!!, usuarioId)
                             }
                         }
-
-                        // ❤️ Animación suave tipo “latido”
                         val scale by animateFloatAsState(
                             targetValue = if (esFavorito) 1.2f else 1f,
                             animationSpec = tween(
@@ -501,14 +533,49 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                         nombreEvento = evento.nombre
                     )
 
-                    // --- Calificación ---
+                    // ------------------- CALIFICACIÓN Y COMENTARIO -------------------
                     Text("Calificación", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = DarkGrayText)
                     Spacer(Modifier.height(8.dp))
-                    RatingBar(initialRating = userRating, onRatingChanged = { userRating = it })
+
+                    // Composable de calificación y comentario del evento, que maneja la selección de estrellas,
+                    // el texto del comentario y el envío de la calificación al ViewModel.
+                    RatingCommentSection(
+                        initialRating = selectedRatingForPopup,
+                        hasUserRated = hasUserRated, //
+                        onRatingChange = { newRating ->
+                            selectedRatingForPopup = newRating
+
+                        },
+                        onCommentChange = { newComment ->
+                            commentForEvent = newComment
+                        },
+                        onSendRating = { rating, comment ->
+
+                            val eventoId = evento?.id
+                            val currentUsuarioId = usuarioId
+
+                            if (eventoId == null || currentUsuarioId == null) {
+                                Toast.makeText(context, "Debes iniciar sesión para calificar", Toast.LENGTH_SHORT).show()
+                                return@RatingCommentSection
+                            }
+
+                            eventoViewModel.enviarCalificacionYComentario(
+                                eventoId = eventoId,
+                                usuarioId = currentUsuarioId,
+                                rating = rating,
+                                comment = comment
+                            )
+
+                            Toast.makeText(context, "Calificación enviada con éxito.", Toast.LENGTH_LONG).show()
+                            selectedRatingForPopup = rating
+                            hasUserRated = true
+                        }
+                    )
+
 
                     Spacer(Modifier.height(24.dp))
 
-                    // --- Botones compartir / descargar ---
+
                     Row(
                         horizontalArrangement = Arrangement.Center,
                         modifier = Modifier.fillMaxWidth()
@@ -516,6 +583,18 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                         IconActionButton(icon = Icons.Default.Share) { shareEvent(context, evento) }
                         Spacer(Modifier.width(20.dp))
                         IconActionButton(icon = Icons.Default.Download) { downloadEventImage(context, evento.imagenUrl) }
+                        Spacer(Modifier.width(20.dp))
+                        IconActionButton(icon = Icons.Default.Comment) {
+                            val id = evento?.id
+
+                            if (id != null) {
+                                // Navega a la ruta, pasando el ID del evento como argumento
+                                // ASUME que la ruta de navegación es: "all_comments_screen/{eventoId}"
+                                navController.navigate("all_comments_screen/$id")
+                            } else {
+                                Toast.makeText(context, "Error: No se pudo obtener el ID del evento", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
 
