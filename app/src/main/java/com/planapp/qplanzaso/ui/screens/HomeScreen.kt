@@ -112,7 +112,7 @@ fun ContentScreen(
         0 -> CalendarioScreen(navController = navController, viewModel = calendarioViewModel)
         // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
         1 -> Home(modifier = modifier, navController = navController)
-        2 -> Profile(modifier = modifier, navController = navController)
+        2 -> Profile(navController = navController)
     }
 }
 

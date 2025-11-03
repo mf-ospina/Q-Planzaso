@@ -274,6 +274,15 @@ class EventoRepository {
             .await()
     }
 
+    suspend fun obtenerEventoPorId(eventoId: String): Evento? {
+        val snapshot = db.collection("eventos").document(eventoId).get().await()
+        return snapshot.toObject(Evento::class.java)
+    }
+
+    suspend fun actualizarEvento(eventoId: String, evento: Evento) {
+        db.collection("eventos").document(eventoId).set(evento).await()
+    }
+
     suspend fun obtenerCalificacionUsuario(eventoId: String, usuarioId: String): Double? {
         return try {
             // 1. Apunta al documento exacto que quieres leer

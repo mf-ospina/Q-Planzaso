@@ -193,7 +193,6 @@ fun EditEventScreen(
                                 imagenUri = null
                             )
 
-                            /*
                             viewModel.actualizarEvento(
                                 eventoId = idEvento,
                                 formData = formData,
@@ -204,7 +203,7 @@ fun EditEventScreen(
                                 onError = { errorMsg ->
                                     Toast.makeText(context, "Error: $errorMsg", Toast.LENGTH_LONG).show()
                                 }
-                            )*/
+                            )
                         } catch (e: Exception) {
                             Toast.makeText(context, "Error inesperado: ${e.message}", Toast.LENGTH_LONG).show()
                         }

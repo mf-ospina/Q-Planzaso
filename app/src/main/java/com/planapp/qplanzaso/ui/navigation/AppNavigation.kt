@@ -1,6 +1,8 @@
 package com.planapp.qplanzaso.ui.navigation
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -9,6 +11,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.planapp.qplanzaso.model.EventFormData
+import com.planapp.qplanzaso.model.Evento
 import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
 import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
@@ -100,6 +104,16 @@ fun AppNavigation(
         composable("selector_ubicacion") {
             SelectorUbicacionMapa(navController)
         }
+
+        composable(
+            route = "EditEventScreen/{encodedJson}",
+            arguments = listOf(navArgument("encodedJson") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val encodedJson = backStackEntry.arguments?.getString("encodedJson")
+            EditEventScreen(navController = navController, encodedJson = encodedJson)
+        }
+
+
 
         composable("favoritos") {
             val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
