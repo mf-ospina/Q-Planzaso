@@ -30,6 +30,8 @@ import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Home
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.NavItem
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.Profile
 import com.planapp.qplanzaso.ui.screens.calendar.CalendarioScreen
+import com.planapp.qplanzaso.ui.theme.LightSelector
+import com.planapp.qplanzaso.ui.theme.PrimaryColor
 import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 
 @Composable
@@ -110,7 +112,7 @@ fun ContentScreen(
         0 -> CalendarioScreen(navController = navController, viewModel = calendarioViewModel)
         // 👇 CAMBIO 3: Pasa el navController a la pantalla Home
         1 -> Home(modifier = modifier, navController = navController)
-        2 -> Profile(modifier = modifier, navController = navController)
+        2 -> Profile(navController = navController)
     }
 }
 

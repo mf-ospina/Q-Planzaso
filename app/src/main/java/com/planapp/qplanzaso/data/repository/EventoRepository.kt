@@ -227,4 +227,14 @@ class EventoRepository {
             .update(campo, valor)
             .await()
     }
+
+    suspend fun obtenerEventoPorId(eventoId: String): Evento? {
+        val snapshot = db.collection("eventos").document(eventoId).get().await()
+        return snapshot.toObject(Evento::class.java)
+    }
+
+    suspend fun actualizarEvento(eventoId: String, evento: Evento) {
+        db.collection("eventos").document(eventoId).set(evento).await()
+    }
+
 }
