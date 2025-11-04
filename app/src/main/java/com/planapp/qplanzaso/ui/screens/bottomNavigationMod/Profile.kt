@@ -390,7 +390,7 @@ fun EventoCard(
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteDialog = false
-                    evento.id?.let { eventoViewModel.eliminarEvento(it) }
+                    evento.id?.let { eventoViewModel.eliminarEvento(it, creadorId = usuarioId) }
                 }) { Text("Eliminar", color = Color.Red, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {

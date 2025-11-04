@@ -3,6 +3,7 @@ package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.notifications
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +28,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.model.Notificacion
 import com.planapp.qplanzaso.model.TipoNotificacion
 import com.planapp.qplanzaso.ui.components.QTopBar
+import com.planapp.qplanzaso.ui.theme.DarkGrayText
 import com.planapp.qplanzaso.ui.viewModel.NotificacionViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -47,9 +49,17 @@ fun NotificacionesScreen(
     }
 
     Scaffold(
-        topBar = { QTopBar(navController = navController, title = "Notificaciones") },
         containerColor = Color.White
     ) { paddingValues ->
+
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            QTopBar(navController = navController, title = "Notificaciones")
+            Spacer(modifier = Modifier.height(8.dp))
 
         when {
             loading -> {
@@ -79,7 +89,7 @@ fun NotificacionesScreen(
                         )
                         Spacer(Modifier.height(12.dp))
                         Text(
-                            text = "No tienes notificaciones por ahora 🎉",
+                            text = "No tienes notificaciones por ahora",
                             color = Color.Gray,
                             fontSize = 16.sp
                         )
@@ -91,7 +101,6 @@ fun NotificacionesScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(paddingValues)
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
@@ -100,6 +109,16 @@ fun NotificacionesScreen(
                             TipoNotificacion.EVENTO_MODIFICADO,
                             TipoNotificacion.FAVORITO_ELIMINADO,
                             TipoNotificacion.RECORDATORIO
+                        )
+                    }
+                    item {
+                        Text(
+                            text = "Tus últimas notificaciones",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 26.sp,
+                            color = DarkGrayText,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
                         )
                     }
 
@@ -116,7 +135,7 @@ fun NotificacionesScreen(
                     }
                 }
             }
-        }
+        }}
     }
 }
 

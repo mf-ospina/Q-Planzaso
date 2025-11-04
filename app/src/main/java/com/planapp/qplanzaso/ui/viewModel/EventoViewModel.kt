@@ -344,7 +344,7 @@ class EventoViewModel(
         }
     }
 
-    fun eliminarEvento(eventoId: String) {
+    fun eliminarEvento(eventoId: String, creadorId: String? = null) {
         viewModelScope.launch {
             try {
                 _loading.value = true
@@ -360,7 +360,13 @@ class EventoViewModel(
                 }
 
                 eventoRepo.eliminarEvento(eventoId)
-                cargarDatosIniciales()
+                // 🔹 Si el creadorId viene desde el perfil, recargamos solo los eventos del usuario
+                if (creadorId != null) {
+                    cargarEventosDelUsuario(creadorId)
+                } else {
+                    // En otros contextos (home, admin, etc.) recargamos todo
+                    cargarDatosIniciales()
+                }
             } catch (e: Exception) {
                 _error.value = "Error eliminando evento: ${e.message}"
             } finally {

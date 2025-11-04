@@ -27,11 +27,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.gson.GsonBuilder
 import com.planapp.qplanzaso.model.Evento
 import com.planapp.qplanzaso.ui.components.QTopBar
+import com.planapp.qplanzaso.ui.theme.DarkGrayText
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,12 +49,12 @@ fun FavoritosScreen(
     val favoritos by viewModel.eventosFavoritos.collectAsState()
     val scope = rememberCoroutineScope()
 
-    // 🔹 Cargar favoritos al iniciar
+    // Cargar favoritos al iniciar
     LaunchedEffect(usuarioId) {
         viewModel.refrescarFavoritos(usuarioId)
     }
 
-    // 🔹 Escuchar cambios globales de favoritos (sincronización en tiempo real)
+    // Escuchar cambios globales
     LaunchedEffect(Unit) {
         viewModel.favoritosSync.collect {
             viewModel.refrescarFavoritos(usuarioId)
@@ -60,53 +62,70 @@ fun FavoritosScreen(
     }
 
     Scaffold(
-        topBar = { QTopBar(navController, title = "Favoritos") },
         containerColor = Color.White
     ) { paddingValues ->
 
-        if (favoritos.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "No tienes eventos favoritos todavía ❤️",
-                    style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray),
-                    textAlign = TextAlign.Center
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(favoritos) { evento ->
-                    FavoritoItemCardAnimated(
-                        evento = evento,
-                        onClick = {
-                            // 🔹 Navegar al detalle del evento
-                            val gson = GsonBuilder().create()
-                            val eventoJson = gson.toJson(evento)
-                            val encodedJson = java.net.URLEncoder.encode(eventoJson, "UTF-8")
-                            navController.navigate("detailEvent/$encodedJson")
-                        },
-                        onRemove = {
-                            // 🔹 Eliminar de favoritos con animación suave
-                            scope.launch {
-                                viewModel.toggleFavorito(evento, usuarioId)
-                            }
-                        }
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            QTopBar(navController, title = "Favoritos")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (favoritos.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No tienes eventos favoritos todavía ❤️",
+                        style = MaterialTheme.typography.bodyLarge.copy(color = Color.Gray),
+                        textAlign = TextAlign.Center
                     )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    item {
+                        Text(
+                            text = "Tus eventos favoritos",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 26.sp,
+                            color = DarkGrayText,
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                        )
+                    }
+
+                    items(favoritos) { evento ->
+                        FavoritoItemCardAnimated(
+                            evento = evento,
+                            onClick = {
+                                val gson = GsonBuilder().create()
+                                val eventoJson = gson.toJson(evento)
+                                val encodedJson = java.net.URLEncoder.encode(eventoJson, "UTF-8")
+                                navController.navigate("detailEvent/$encodedJson")
+                            },
+                            onRemove = {
+                                scope.launch {
+                                    viewModel.toggleFavorito(evento, usuarioId)
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun FavoritoItemCardAnimated(

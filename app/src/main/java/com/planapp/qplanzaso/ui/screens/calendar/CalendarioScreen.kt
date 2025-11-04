@@ -1,5 +1,6 @@
 package com.planapp.qplanzaso.ui.screens.calendar
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -48,7 +49,8 @@ private fun CalendarHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 8.dp)
+            .background(Color(0xFFFFF3E0)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -202,6 +204,7 @@ fun CalendarioScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
+                .background(Color.White),
         ) {
             var showDialog by remember { mutableStateOf(false) }
 
@@ -218,7 +221,7 @@ fun CalendarioScreen(
                 )
             }
 
-            QTopBar(navController, title = "Calendario")
+            QTopBar(navController = navController, title = "Fechas", showBackButton = false)
             Spacer(modifier = Modifier.height(12.dp))
 
             CalendarHeader(

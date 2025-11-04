@@ -30,10 +30,10 @@ fun EventCard(evento: Evento, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(140.dp)
-            .background(Color.White)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),

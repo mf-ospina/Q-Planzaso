@@ -10,6 +10,9 @@ import com.planapp.qplanzaso.model.Evento
 import com.planapp.qplanzaso.model.EventoStats
 import kotlinx.coroutines.tasks.await
 import kotlin.math.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 
 class EventoRepository {
 
@@ -187,25 +190,33 @@ class EventoRepository {
             .collection("favoritos").document(usuarioId).delete().await()
     }
 
-    suspend fun obtenerEventosFavoritosPorUsuario(usuarioId: String): List<Evento> {
+    suspend fun obtenerEventosFavoritosPorUsuario(usuarioId: String): List<Evento> = coroutineScope {
         val eventosSnapshot = db.collection("evento").get().await()
-        val eventosFavoritos = mutableListOf<Evento>()
 
-        for (eventoDoc in eventosSnapshot.documents) {
-            val favoritoDoc = eventoDoc.reference
-                .collection("favoritos")
-                .document(usuarioId)
-                .get()
-                .await()
+        // 🔹 Ejecuta todas las consultas en paralelo
+        val resultadosDiferidos = eventosSnapshot.documents.map { eventoDoc ->
+            async {
+                try {
+                    val favoritoDoc = eventoDoc.reference
+                        .collection("favoritos")
+                        .document(usuarioId)
+                        .get()
+                        .await()
 
-            if (favoritoDoc.exists()) {
-                eventoDoc.toObject(Evento::class.java)?.let { evento ->
-                    eventosFavoritos.add(evento.copy(id = eventoDoc.id))
+                    if (favoritoDoc.exists()) {
+                        eventoDoc.toObject(Evento::class.java)?.copy(id = eventoDoc.id)
+                    } else {
+                        null
+                    }
+                } catch (e: Exception) {
+                    Log.e("EventoRepository", "Error verificando favorito: ${e.message}")
+                    null
                 }
             }
         }
 
-        return eventosFavoritos
+        // 🔹 Espera todas las tareas en paralelo y filtra los nulos
+        resultadosDiferidos.awaitAll().filterNotNull()
     }
 
     suspend fun esEventoFavorito(eventoId: String, usuarioId: String): Boolean {

@@ -11,8 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -21,13 +21,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
@@ -49,7 +47,7 @@ fun LoginScreen(
     var dialogTitle by remember { mutableStateOf("") }
     var dialogMessage by remember { mutableStateOf("") }
 
-    // 🔹 Navegar automáticamente si login fue exitoso
+    // 🔹 Efecto para manejar el login automático
     LaunchedEffect(authState) {
         loading = authState is AuthResult.Loading
         if (authState is AuthResult.Success && (authState as AuthResult.Success<*>).data != null) {
@@ -65,33 +63,40 @@ fun LoginScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(32.dp),
+            .navigationBarsPadding(),
         contentAlignment = Alignment.Center
     ) {
+        // 🔹 Contenido centrado (logo, campos, etc.)
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 🔹 Logo
             Image(
                 painter = painterResource(id = R.drawable.logo_min),
                 contentDescription = stringResource(R.string.login_avatar_desc),
-                modifier = Modifier.size(140.dp)
+                modifier = Modifier
+                    .size(140.dp)
+                    .padding(bottom = 24.dp)
             )
-            Spacer(modifier = Modifier.height(24.dp))
+
             Text(
                 text = stringResource(R.string.login_title),
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black
             )
+
             Spacer(modifier = Modifier.height(36.dp))
 
-            // 🔹 Username
+            // Usuario
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(R.string.login_user_label),
                     color = DarkButton,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 BasicTextField(
@@ -100,31 +105,33 @@ fun LoginScreen(
                     singleLine = true,
                     textStyle = TextStyle(color = Color(0xFF333333), fontSize = 16.sp),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(androidx.compose.ui.focus.FocusDirection.Down) }
-                    ),
+                    keyboardActions = KeyboardActions(onNext = {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }),
                     decorationBox = { innerTextField ->
                         Column {
                             innerTextField()
                             Spacer(modifier = Modifier.height(6.dp))
-                            Box(modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(DarkButton))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.5.dp)
+                                    .background(DarkButton)
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // 🔹 Password
+            // Contraseña
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = stringResource(R.string.login_password_label),
                     color = DarkButton,
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 BasicTextField(
@@ -147,19 +154,40 @@ fun LoginScreen(
                         Column {
                             innerTextField()
                             Spacer(modifier = Modifier.height(6.dp))
-                            Box(modifier = Modifier
-                                .fillMaxWidth()
-                                .height(1.dp)
-                                .background(DarkButton))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(1.5.dp)
+                                    .background(DarkButton)
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔹 Botón login
+            // Recuperar contraseña
+            TextButton(
+                onClick = { navController.navigate("forgot") },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text(
+                    text = stringResource(R.string.login_forgot_password),
+                    color = Color(0xFF0A3D91),
+                    fontSize = 13.sp
+                )
+            }
+        }
+
+        // 🔹 Botón fijo inferior
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 32.dp, vertical = 24.dp)
+        ) {
             Button(
                 onClick = {
                     if (username.isNotEmpty() && password.isNotEmpty()) {
@@ -173,23 +201,23 @@ fun LoginScreen(
                 enabled = !loading,
                 colors = ButtonDefaults.buttonColors(containerColor = DarkButton),
                 shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth().height(48.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
             ) {
                 if (loading) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp)
+                    CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp)
+                    )
                 } else {
                     Text(stringResource(R.string.login_acceder), fontSize = 16.sp)
                 }
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(onClick = { navController.navigate("forgot") }) {
-                Text(stringResource(R.string.login_forgot_password), color = Color(0xFF0A3D91), fontSize = 13.sp)
-            }
         }
 
-        // 🔹 Dialogo de error
+        // 🔹 Diálogo de error
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
@@ -204,15 +232,5 @@ fun LoginScreen(
             )
         }
     }
-}
-
-
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginScreenPreview() {
-    val fakeNavController = rememberNavController()
-    val fakeAuthViewModel = AuthViewModel() // instancia simple, no conectada a Firebase
-    LoginScreen(navController = fakeNavController, authViewModel = fakeAuthViewModel)
 }
 

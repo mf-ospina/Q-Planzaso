@@ -23,6 +23,7 @@ import com.kizitonwose.calendar.compose.CalendarState
 import com.kizitonwose.calendar.compose.HorizontalCalendar
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
+import com.planapp.qplanzaso.ui.theme.PrimaryColor
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -69,7 +70,7 @@ private fun DayCell(
     // 🔹 Animaciones suaves para color y tamaño
     val animatedColor by animateColorAsState(
         targetValue = when {
-            isSelected -> purple
+            isSelected -> PrimaryColor
             isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
             else -> Color.Transparent
         },
