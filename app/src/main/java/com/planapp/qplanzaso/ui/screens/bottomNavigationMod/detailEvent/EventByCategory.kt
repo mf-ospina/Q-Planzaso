@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -27,6 +29,7 @@ import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
 import com.planapp.qplanzaso.ui.components.EventCard
 import com.google.firebase.Timestamp
 import com.google.gson.GsonBuilder
+import com.planapp.qplanzaso.ui.components.QTopBar
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.TimestampTypeAdapter
@@ -83,18 +86,18 @@ fun EventByCategory(
     }
 
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(decodedCategoryName) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            // TopBar
+            QTopBar(navController = navController, title = decodedCategoryName )
+
+            Spacer(modifier = Modifier.height(1.dp))
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -201,7 +204,7 @@ fun EventByCategory(
                 onDismiss = { showFilterSheet = false }
             )
         }
-    }
+    }}
 }
 
 // ----------------------------------------------------------------------

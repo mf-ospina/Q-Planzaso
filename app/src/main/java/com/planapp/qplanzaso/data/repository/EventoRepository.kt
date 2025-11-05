@@ -142,15 +142,22 @@ class EventoRepository {
 
     // 🔹 Obtener eventos por categoría
     suspend fun obtenerEventosPorCategoriaN(categoryId: String): List<Evento> {
-        Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoria' = '$categoryId'")
+        Log.d("QPLANZASO_DEBUG", "Repositorio va a buscar eventos con 'categoriasIds' que contiene '$categoryId'")
 
-        val snapshot = db.collection("evento")
-            .whereEqualTo("categoria", categoryId)
-            .get().await()
+        return try {
+            val snapshot = db.collection("evento")
+                .whereArrayContains("categoriasIds", categoryId) // 👈 cambio clave
+                .get()
+                .await()
 
-        Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
-        return snapshot.toObjects(Evento::class.java)
+            Log.d("QPLANZASO_DEBUG", "Consulta completada. Documentos encontrados: ${snapshot.size()}")
+            snapshot.toObjects(Evento::class.java)
+        } catch (e: Exception) {
+            Log.e("QPLANZASO_DEBUG", "Error al obtener eventos por categoría: ${e.message}", e)
+            emptyList()
+        }
     }
+
 
     // 🔹 Actualizar estadísticas (visualizaciones, favoritos, asistentes)
     suspend fun actualizarEstadisticas(eventoId: String, stats: EventoStats) {

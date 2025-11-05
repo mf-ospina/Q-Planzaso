@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -162,8 +163,10 @@ fun Home(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            items(categoriaState.categorias) { categoria ->
-                                val color = getColorForCategory(categoria.nombre)
+                            // ✅ Ahora usamos itemsIndexed en lugar de items
+                            itemsIndexed(categoriaState.categorias) { index, categoria ->
+                                val color = getColorForCategoryIndex(index) // Color según el índice
+
                                 CategoryBox(
                                     name = categoria.nombre,
                                     color = color,
@@ -172,7 +175,6 @@ fun Home(
                                             categoria.nombre,
                                             StandardCharsets.UTF_8.toString()
                                         )
-
                                         navController.navigate("EventByCategory/${categoria.id}/${encodedCategoryName}")
                                     }
                                 )
@@ -299,4 +301,19 @@ fun CategoryBox(
             modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp) // Más ancho
         )
     }
+}
+
+private val categoryColors = listOf(
+    Color(0xFF81C784), // Verde
+    Color(0xFFF06292), // Rosa
+    Color(0xFF64B5F6), // Azul
+    Color(0xFFFFB74D), // Naranja
+    Color(0xFFBA68C8), // Violeta
+    Color(0xFFFF8A65), // Coral
+    Color(0xFF4DB6AC), // Verde agua
+    Color(0xFFA1887F)  // Marrón suave
+)
+
+private fun getColorForCategoryIndex(index: Int): Color {
+    return categoryColors[index % categoryColors.size]
 }
