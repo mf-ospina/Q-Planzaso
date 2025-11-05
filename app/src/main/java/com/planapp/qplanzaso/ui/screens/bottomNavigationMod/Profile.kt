@@ -103,12 +103,24 @@ fun PerfilContenido(
 
     val eventosFiltrados = remember(searchQuery, selectedTabIndex, eventosCreados, eventosInscritos) {
         val baseList = if (selectedTabIndex == 0) eventosCreados else eventosInscritos
-        if (searchQuery.isBlank()) baseList
+
+        val filtrados = if (searchQuery.isBlank()) baseList
         else baseList.filter {
             it.nombre.contains(searchQuery, ignoreCase = true) ||
                     (it.direccion?.contains(searchQuery, ignoreCase = true) ?: false)
         }
+
+        // 🔹 Ordenar según la pestaña seleccionada:
+        if (selectedTabIndex == 0) {
+            // Creados → más lejanos primero
+            filtrados.sortedByDescending { it.fechaInicio?.toDate() }
+        } else {
+            // Inscritos → más próximos primero
+            filtrados.sortedBy { it.fechaInicio?.toDate() }
+        }
     }
+
+
 
 
     val usuarioId = usuario.uid

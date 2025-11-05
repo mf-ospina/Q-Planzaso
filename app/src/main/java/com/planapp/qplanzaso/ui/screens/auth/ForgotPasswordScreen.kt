@@ -12,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -58,7 +57,7 @@ fun ForgotPasswordScreen(navController: NavController) {
                     .weight(1f)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.logo_min),
+                    painter = painterResource(id = R.drawable.logo_minxs),
                     contentDescription = stringResource(R.string.login_avatar_desc),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier

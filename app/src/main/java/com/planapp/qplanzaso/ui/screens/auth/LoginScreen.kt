@@ -21,11 +21,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.planapp.qplanzaso.R
 import com.planapp.qplanzaso.auth.AuthResult
 import com.planapp.qplanzaso.auth.AuthViewModel
@@ -75,7 +73,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Image(
-                painter = painterResource(id = R.drawable.logo_min),
+                painter = painterResource(id = R.drawable.logo_minxs),
                 contentDescription = stringResource(R.string.login_avatar_desc),
                 modifier = Modifier
                     .size(140.dp)
@@ -221,8 +219,8 @@ fun LoginScreen(
         if (showDialog) {
             AlertDialog(
                 onDismissRequest = { showDialog = false },
-                title = { Text(dialogTitle, fontWeight = FontWeight.Bold, color = Color.Black) },
-                text = { Text(dialogMessage, color = Color.Gray) },
+                title = {  Text(stringResource(R.string.login_invalid), fontWeight = FontWeight.Bold, color = Color.Black) },
+                text = { Text(stringResource(R.string.login_invalid_text), color = Color.Gray) },
                 confirmButton = {
                     TextButton(onClick = { showDialog = false }) {
                         Text(stringResource(R.string.close_button), color = DarkButton)

@@ -74,12 +74,12 @@ fun EventCard(evento: Evento, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
-                    Icon(
+                    /*Icon(
                         imageVector = Icons.Default.FavoriteBorder,
                         contentDescription = "Favorito",
                         tint = Color.Gray,
                         modifier = Modifier.padding(start = 8.dp)
-                    )
+                    )*/
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

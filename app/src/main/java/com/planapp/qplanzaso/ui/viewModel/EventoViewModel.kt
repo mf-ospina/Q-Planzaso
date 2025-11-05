@@ -262,7 +262,23 @@ class EventoViewModel(
                     return@launch
                 }
 
-                // 2️⃣ Construir un nuevo objeto Evento actualizado
+                var nuevaImagenUrl = eventoActual.imagenUrl // 🔹 variable temporal
+
+                // 2️⃣ Subir nueva imagen si el usuario seleccionó una distinta
+                val nuevaImagenUri = formData.imagenUri
+                if (nuevaImagenUri != null) {
+                    try {
+                        nuevaImagenUrl = storageRepo.reemplazarImagen(
+                            eventoActual.imagenUrl,
+                            nuevaImagenUri,
+                            eventoId
+                        )
+                    } catch (e: Exception) {
+                        _error.value = "Error al actualizar la imagen: ${e.message}"
+                    }
+                }
+
+                // 3️⃣ Construir el objeto Evento actualizado (ya con la nueva URL si aplica)
                 val geoPoint = formData.ubicacion
                 val eventoActualizado = eventoActual.copy(
                     nombre = formData.nombre,
@@ -274,23 +290,8 @@ class EventoViewModel(
                     patrocinadores = formData.patrocinadores,
                     direccion = formData.direccion,
                     ubicacion = geoPoint,
-                    imagenUrl = eventoActual.imagenUrl, // se actualiza más abajo si hay nueva imagen
+                    imagenUrl = nuevaImagenUrl // 🔹 aquí ya se actualiza correctamente
                 )
-
-                // 3️⃣ Subir nueva imagen si el usuario seleccionó una distinta
-                val nuevaImagenUri = formData.imagenUri
-                if (nuevaImagenUri != null) {
-                    try {
-                        val nuevaUrl = storageRepo.reemplazarImagen(
-                            eventoActual.imagenUrl,
-                            nuevaImagenUri,
-                            eventoId
-                        )
-                        eventoRepo.actualizarCampoEvento(eventoId, "imagenUrl", nuevaUrl)
-                    } catch (e: Exception) {
-                        _error.value = "Error al actualizar la imagen: ${e.message}"
-                    }
-                }
 
                 // 4️⃣ Guardar cambios del evento en Firestore
                 eventoRepo.editarEvento(eventoActualizado)
@@ -313,7 +314,6 @@ class EventoViewModel(
                     )
                 }
 
-
                 onSuccess()
             } catch (e: Exception) {
                 val mensaje = "Error actualizando evento: ${e.message}"
@@ -325,23 +325,9 @@ class EventoViewModel(
         }
     }
 
+
     suspend fun obtenerEventoPorId(eventoId: String): Evento? {
         return eventoRepo.obtenerEventoPorId(eventoId)
-    }
-
-
-    fun editarEvento(evento: Evento) {
-        viewModelScope.launch {
-            try {
-                _loading.value = true
-                eventoRepo.editarEvento(evento)
-                cargarDatosIniciales()
-            } catch (e: Exception) {
-                _error.value = "Error editando evento: ${e.message}"
-            } finally {
-                _loading.value = false
-            }
-        }
     }
 
     fun eliminarEvento(eventoId: String, creadorId: String? = null) {
