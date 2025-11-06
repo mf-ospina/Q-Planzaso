@@ -17,6 +17,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,7 +43,7 @@ fun HomeScreen(navController: NavController, calendarioViewModel: CalendarioView
         NavItem(label = "Perfil", icon = Icons.Default.PeopleAlt, route = "profile")
     )
 
-    var selectedItemIndex by remember { mutableStateOf(1) }
+    var selectedItemIndex by rememberSaveable { mutableStateOf(1) }
     val categoria = CategoriaRepository()
 
     Scaffold(

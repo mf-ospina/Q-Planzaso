@@ -1,5 +1,5 @@
 package com.planapp.qplanzaso.ui.viewModel
-
+import com.planapp.qplanzaso.utils.NotificationHelper
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +31,10 @@ import com.planapp.qplanzaso.data.repository.StorageRepository
 import com.planapp.qplanzaso.model.EventFormData
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import com.planapp.qplanzaso.data.repository.NotificacionRepository
+import com.planapp.qplanzaso.model.Notificacion
+import com.planapp.qplanzaso.ui.screens.profile.NotificationPrefsRepository
+import kotlinx.coroutines.flow.first
 
 /**
  * ViewModel principal para manejar toda la lógica de los eventos:
@@ -628,6 +632,63 @@ class EventoViewModel(
             }
         }
     }
+// ------------------------------------------
+// 🔹 Inscripciones
+// ------------------------------------------
+
+    // ✅ NUEVA versión con Context para respetar NotificationPrefs
+    fun inscribirseEnEvento(
+        context: Context,
+        eventoId: String,
+        usuarioId: String
+    ) {
+        viewModelScope.launch {
+            try {
+                _loading.value = true
+
+                // 1) Inscribir al usuario
+                inscripcionRepo.inscribirseEnEvento(eventoId, usuarioId)
+                _eventoSeleccionado.value = eventoRepo.obtenerEvento(eventoId)
+
+                // 2) Intentar crear notificación según preferencias
+                try {
+                    val prefsRepo = NotificationPrefsRepository(context)
+                    val prefs = prefsRepo.data.first()
+
+                    if (prefs.reminders && prefs.push) {
+                        val evento = _eventoSeleccionado.value ?: eventoRepo.obtenerEvento(eventoId)
+                        if (evento != null) {
+                            // 🔹 Guardar en Firestore (como ya teníamos)
+                            val notificacion = Notificacion(
+                                usuarioId = usuarioId,
+                                titulo = "Te inscribiste a ${evento.nombre}",
+                                mensaje = "No olvides tu evento en ${evento.direccion ?: "tu próximo evento"}",
+                                tipo = "recordatorio",
+                                fechaEnvio = Timestamp.now(),
+                                leida = false
+                            )
+                            NotificacionRepository().crearNotificacion(notificacion)
+
+                            // 🔹 Mostrar notificación del sistema (NUEVO)
+                            NotificationHelper.showInscripcionNotification(
+                                context = context,
+                                tituloEvento = evento.nombre,
+                                direccion = evento.direccion
+                            )
+                        }
+                    }
+                } catch (_: Exception) {
+                    // Si falla la notificación, no rompemos el flujo de inscripción
+                }
+
+            } catch (e: Exception) {
+                _error.value = "Error al inscribirse: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
 
     fun cancelarInscripcion(eventoId: String, usuarioId: String) {
         viewModelScope.launch {

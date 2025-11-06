@@ -1,27 +1,29 @@
 package com.planapp.qplanzaso.ui.navigation
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.navArgument
-import com.planapp.qplanzaso.model.EventFormData
-import com.planapp.qplanzaso.model.Evento
 import com.google.firebase.auth.FirebaseAuth
-import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
-import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
-import com.planapp.qplanzaso.ui.screens.auth.*
 import com.planapp.qplanzaso.ui.screens.HomeScreen
+import com.planapp.qplanzaso.ui.screens.auth.*
+import com.planapp.qplanzaso.ui.screens.onboarding.LocationPermissionScreen
+import com.planapp.qplanzaso.ui.screens.onboarding.SplashScreen
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent.*
 import com.planapp.qplanzaso.ui.screens.bottomNavigationMod.favorites.FavoritosScreen
 import com.planapp.qplanzaso.ui.viewModel.CalendarioViewModel
 import com.planapp.qplanzaso.ui.viewModel.EventoViewModel
+
+// 👇 imports del módulo Profile (los que ves en tu carpeta Profile)
+import com.planapp.qplanzaso.ui.screens.profile.ProfileEntry
+import com.planapp.qplanzaso.ui.screens.profile.EditProfileEntry
+import com.planapp.qplanzaso.ui.screens.profile.SettingsScreen
+import com.planapp.qplanzaso.ui.screens.profile.NotificationSettingsEntry
 
 @Composable
 fun AppNavigation(
@@ -30,7 +32,6 @@ fun AppNavigation(
 ) {
     val eventoViewModel: EventoViewModel = viewModel()
     val calendarioViewModel: CalendarioViewModel = viewModel()
-
 
     NavHost(
         navController = navController,
@@ -52,10 +53,25 @@ fun AppNavigation(
 
         // Home
         composable("home") {
-            HomeScreen(navController = navController, calendarioViewModel = calendarioViewModel)
+            HomeScreen(
+                navController = navController,
+                calendarioViewModel = calendarioViewModel
+            )
         }
 
-
+        // 🔹 PERFIL / AJUSTES / NOTIFICACIONES (usando tus nuevos archivos)
+        composable("profile") {
+            ProfileEntry(navController = navController)
+        }
+        composable("edit_profile") {
+            EditProfileEntry(navController = navController)
+        }
+        composable("settings") {
+            SettingsScreen(navController = navController)
+        }
+        composable("notif_settings") {
+            NotificationSettingsEntry(navController = navController)
+        }
 
         // Event by category (2 argumentos)
         composable(
@@ -113,13 +129,13 @@ fun AppNavigation(
             EditEventScreen(navController = navController, encodedJson = encodedJson)
         }
 
-
-
         composable("favoritos") {
             val usuarioId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-            FavoritosScreen(navController = navController, viewModel = eventoViewModel, usuarioId = usuarioId)
+            FavoritosScreen(
+                navController = navController,
+                viewModel = eventoViewModel,
+                usuarioId = usuarioId
+            )
         }
-
-
     }
 }

@@ -1,5 +1,5 @@
 package com.planapp.qplanzaso.ui.screens.bottomNavigationMod.detailEvent
-
+import com.planapp.qplanzaso.utils.NotificationHelper
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
@@ -135,11 +135,28 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                                 }
 
                                 if (!isRegistered && evento != null && evento.id != null) {
-                                    eventoViewModel.inscribirseEnEvento(evento.id!!, usuarioId)
+                                    // 1) Inscribir en backend / Firestore
+                                    eventoViewModel.inscribirseEnEvento(context, evento.id!!, usuarioId)
+
+                                    // 2) Actualizar UI local
                                     isRegistered = true
                                     showDialog = true
+
+                                    // 3) 🔔 Notificación local del sistema
+                                    NotificationHelper.showInscripcionNotification(
+                                        context = context,
+                                        tituloEvento = evento.nombre,
+                                        direccion = evento.direccion
+                                    )
                                 } else {
-                                    Toast.makeText(context, "Ya estás inscrito a este evento", Toast.LENGTH_SHORT).show()
+                                    // 👉 Cancelar inscripción
+                                    eventoViewModel.cancelarInscripcion(evento.id!!, usuarioId)
+                                    isRegistered = false
+                                    Toast.makeText(
+                                        context,
+                                        "Has cancelado tu inscripción a este evento",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
                             },
                             modifier = Modifier
@@ -156,6 +173,7 @@ fun DetailEvent(navController: NavController, encodedJson: String?, eventoViewMo
                                 fontSize = 19.sp
                             )
                         }
+
 
                     }
                 }

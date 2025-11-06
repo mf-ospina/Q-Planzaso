@@ -1,5 +1,5 @@
 package com.planapp.qplanzaso.ui.screens.onboarding
-
+import android.os.Build
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,10 +51,23 @@ fun LocationPermissionScreen(
     var dialogMessage by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-        if (granted) {
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+
+        val locationGranted =
+            permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+
+        // Para Android 13+ miramos también notificaciones, pero no bloqueamos el flujo por eso
+        val notificationsGranted =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permissions[Manifest.permission.POST_NOTIFICATIONS] ?: false
+            } else {
+                true
+            }
+
+        hasPermission = locationGranted
+
+        if (locationGranted) {
             fusedClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
                     dialogMessage = context.getString(R.string.location_success_message)
@@ -69,12 +82,15 @@ fun LocationPermissionScreen(
                 isSuccess = false
                 showDialog = true
             }
+
+            // Aquí podrías loguear si notificationsGranted es false, pero no es obligatorio
         } else {
             dialogMessage = context.getString(R.string.location_denied_message)
             isSuccess = false
             showDialog = true
         }
     }
+
 
     // Diálogo de resultado
     if (showDialog) {
@@ -169,7 +185,15 @@ fun LocationPermissionScreen(
                 )
                 Spacer(modifier = Modifier.height(22.dp))
                 Button(
-                    onClick = { launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION) },
+                    onClick = {
+                        val perms = mutableListOf(Manifest.permission.ACCESS_FINE_LOCATION)
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            perms.add(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+
+                        launcher.launch(perms.toTypedArray())
+                    },
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = DarkButton,

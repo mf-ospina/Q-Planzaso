@@ -60,10 +60,10 @@ android {
 }
 
 dependencies {
-
+    implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation(libs.androidx.animation.core)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
-
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

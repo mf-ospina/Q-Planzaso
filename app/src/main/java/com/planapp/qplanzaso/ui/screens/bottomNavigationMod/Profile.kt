@@ -15,7 +15,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -44,8 +42,6 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
-import com.google.gson.Gson
-
 
 @Composable
 fun Profile(
@@ -104,11 +100,12 @@ fun PerfilContenido(
             .padding(16.dp)
     ) {
         // TopBar
-        QTopBar(navController = navController, title = "Mi perfil")
+        QTopBar(navController = navController, title = "Mi perfil", showBackButton = false)
+
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // 🔹 Contenedor con imagen centrada y botón flotante a la derecha
+        // 🔹 Contenedor con imagen centrada y botones de acción
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,12 +122,13 @@ fun PerfilContenido(
                 contentScale = ContentScale.Crop
             )
 
+            // 🚪 Cerrar sesión
             IconButton(
                 onClick = onCerrarSesion,
                 modifier = Modifier.align(Alignment.TopEnd)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Logout,
+                    imageVector = Icons.AutoMirrored.Filled.Logout,
                     contentDescription = "Cerrar sesión",
                     tint = Color.Gray
                 )
@@ -145,7 +143,6 @@ fun PerfilContenido(
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
             modifier = Modifier.align(Alignment.CenterHorizontally),
             color = DarkGrayText
-
         )
         Text(
             text = usuario.correo,
@@ -165,7 +162,41 @@ fun PerfilContenido(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // crear evento
+        // ✏️ Botón Editar perfil
+        Button(
+            onClick = { navController.navigate("edit_profile") },
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Edit,
+                contentDescription = "Editar perfil",
+                tint = Color.White
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Editar perfil", fontSize = 17.sp, color = Color.White)
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 🔔 Botón Notificaciones
+        OutlinedButton(
+            onClick = { navController.navigate("notif_settings") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp),
+            shape = RoundedCornerShape(10.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryColor)
+        ) {
+            Text("Notificaciones")
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // ➕ Crear evento
         Button(
             onClick = onCrearEvento,
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor),
@@ -221,7 +252,6 @@ fun PerfilContenido(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
-
     }
 }
 
@@ -248,7 +278,6 @@ fun EventoCard(
             .fillMaxWidth()
             .height(140.dp)
             .clickable {
-                // ✅ Usa el mismo Gson con el TypeAdapter
                 val gson = GsonBuilder()
                     .registerTypeAdapter(Timestamp::class.java, TimestampTypeAdapter())
                     .create()
@@ -259,10 +288,7 @@ fun EventoCard(
                 navController.navigate("detailEvent/$encodedJson")
             }
     ) {
-        Row(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            // 🖼️ Imagen del evento
+        Row(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = evento.imagenUrl ?: evento.imagen,
                 contentDescription = evento.nombre,
@@ -273,7 +299,6 @@ fun EventoCard(
                 contentScale = ContentScale.Crop
             )
 
-            // 🧾 Información del evento
             Column(
                 modifier = Modifier
                     .padding(12.dp)
@@ -318,12 +343,10 @@ fun EventoCard(
                     }
                 }
 
-                // 🟠 Botones de acción
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    // ✏️ Editar
                     IconButton(
                         onClick = {
                             val gson = GsonBuilder()
@@ -341,7 +364,6 @@ fun EventoCard(
                         )
                     }
 
-                    // 🗑️ Eliminar
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
@@ -354,7 +376,6 @@ fun EventoCard(
         }
     }
 
-    // ⚠️ Diálogo de confirmación de eliminación
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
@@ -364,13 +385,9 @@ fun EventoCard(
                 TextButton(
                     onClick = {
                         showDeleteDialog = false
-                        evento.id?.let { id ->
-                            eventoViewModel.eliminarEvento(id)
-                        }
+                        evento.id?.let { id -> eventoViewModel.eliminarEvento(id) }
                     }
-                ) {
-                    Text("Eliminar", color = Color.Red)
-                }
+                ) { Text("Eliminar", color = Color.Red) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
